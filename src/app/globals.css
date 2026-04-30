@@ -1,0 +1,16 @@
+@import "tailwindcss";
+
+@theme inline {
+  --font-sans: var(--font-sans);
+  --font-serif: var(--font-serif);
+}
+
+body {
+  font-family: var(--font-sans), "Apple SD Gothic Neo", "맑은 고딕", sans-serif;
+  background: #fff;
+  color: #111;
+}
+
+.font-serif {
+  font-family: var(--font-serif), "Apple Myungjo", "바탕", "Batang", Georgia, serif;
+}
