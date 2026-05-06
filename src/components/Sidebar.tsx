@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { cookies } from "next/headers";
 import Link from "next/link";
 import MiniVoteWidget from "./MiniVoteWidget";
+import OttMiniVoteWidget from "./OttMiniVoteWidget";
 import { Option } from "@/types";
 
 interface Props {
@@ -52,6 +53,9 @@ export default async function Sidebar({ pollId }: Props) {
 
   return (
     <aside className="space-y-5">
+      {/* OTT 신작 대결 미니 투표 */}
+      <OttMiniVoteWidget />
+
       {poll && (
         <div className="border-2 border-[#1c1712]">
           <div className="bg-[#1c1712] text-[#f0e5c0] px-3 py-1.5 flex items-center justify-between">

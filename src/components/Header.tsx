@@ -41,18 +41,22 @@ export default function Header() {
           </Link>
         </div>
 
-        <nav className="flex justify-center gap-0 py-1">
+        <nav className="flex justify-center gap-0 py-1 flex-wrap">
           {categories.map((cat, i) => (
             <Link
               key={cat}
               href={`/?category=${encodeURIComponent(cat)}`}
-              className={`px-4 py-1 text-sm font-medium hover:bg-black hover:text-white transition-colors ${
-                i < categories.length - 1 ? "border-r border-[#c8bfa8]" : ""
-              }`}
+              className={`px-4 py-1 text-sm font-medium hover:bg-black hover:text-white transition-colors border-r border-[#c8bfa8]`}
             >
               {cat}
             </Link>
           ))}
+          <Link
+            href="/schedule"
+            className="px-4 py-1 text-sm font-bold hover:bg-[#1c1712] hover:text-[#f0e5c0] transition-colors text-[#8c3a00] border-l-2 border-[#8c3a00] ml-2"
+          >
+            OTT 편성표
+          </Link>
         </nav>
       </div>
     </header>
