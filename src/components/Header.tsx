@@ -23,7 +23,7 @@ export default function Header() {
   return (
     <header className="border-b-4 border-black">
       <div className="max-w-7xl mx-auto px-4">
-        <div className="flex justify-between items-center py-1 text-xs border-b border-gray-300">
+        <div className="flex justify-between items-center py-1 text-xs border-b border-[#c8bfa8]">
           <span className="text-gray-600">{today}</span>
           <span className="text-gray-600 tracking-widest">
             대한민국 No.1 여론 투표 플랫폼
@@ -47,7 +47,7 @@ export default function Header() {
               key={cat}
               href={`/?category=${encodeURIComponent(cat)}`}
               className={`px-4 py-1 text-sm font-medium hover:bg-black hover:text-white transition-colors ${
-                i < categories.length - 1 ? "border-r border-gray-300" : ""
+                i < categories.length - 1 ? "border-r border-[#c8bfa8]" : ""
               }`}
             >
               {cat}

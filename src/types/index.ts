@@ -28,6 +28,15 @@ export interface Option {
   display_order: number;
 }
 
+export interface Opinion {
+  id: string;
+  poll_id: string;
+  content: string;
+  stance: "pro" | "con" | "neutral" | null;
+  voter_fingerprint: string;
+  created_at: string;
+}
+
 export interface Vote {
   id: string;
   poll_id: string;

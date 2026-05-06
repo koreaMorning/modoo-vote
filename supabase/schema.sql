@@ -61,6 +61,18 @@ begin
 end;
 $$;
 
+-- 한 줄 의견 테이블
+create table poll_opinions (
+  id uuid primary key default gen_random_uuid(),
+  poll_id uuid not null references polls(id) on delete cascade,
+  content text not null check (char_length(content) between 1 and 100),
+  stance text check (stance in ('pro', 'con', 'neutral')),
+  voter_fingerprint text not null,
+  created_at timestamptz not null default now()
+);
+
+create index poll_opinions_poll_id_idx on poll_opinions(poll_id);
+
 -- RLS 활성화
 alter table polls enable row level security;
 alter table options enable row level security;
@@ -72,6 +84,10 @@ create policy "options_read" on options for select using (true);
 create policy "votes_read" on votes for select using (true);
 
 -- 투표 함수는 security definer로 실행되므로 별도 정책 불필요
+
+alter table poll_opinions enable row level security;
+create policy "poll_opinions_read" on poll_opinions for select using (true);
+create policy "poll_opinions_insert" on poll_opinions for insert with check (true);
 
 -- 샘플 데이터
 insert into polls (title, description, category, ends_at) values

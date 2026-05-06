@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Noto_Serif_KR, Noto_Sans_KR } from "next/font/google";
 import "./globals.css";
+import NewsTicker from "@/components/NewsTicker";
 
 const notoSerifKR = Noto_Serif_KR({
   variable: "--font-serif",
@@ -26,7 +27,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="ko" className={`${notoSerifKR.variable} ${notoSansKR.variable}`}>
-      <body className="antialiased">{children}</body>
+      <body className="antialiased">
+        <NewsTicker />
+        {children}
+      </body>
     </html>
   );
 }

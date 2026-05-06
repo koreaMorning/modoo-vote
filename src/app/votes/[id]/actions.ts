@@ -40,3 +40,32 @@ export async function castVote(
 
   return result;
 }
+
+export async function submitOpinion(
+  pollId: string,
+  content: string,
+  stance: string | null
+): Promise<{ success: boolean; error?: string }> {
+  const trimmed = content?.trim() ?? "";
+  if (!trimmed || trimmed.length > 100) {
+    return { success: false, error: "invalid" };
+  }
+
+  const fingerprint = await getOrCreateFingerprint();
+  const supabase = await createClient();
+
+  const { error } = await supabase.from("poll_opinions").insert({
+    poll_id: pollId,
+    content: trimmed,
+    stance: stance || null,
+    voter_fingerprint: fingerprint,
+  });
+
+  if (error) {
+    console.error("Opinion error:", error);
+    return { success: false, error: "server_error" };
+  }
+
+  revalidatePath(`/votes/${pollId}`);
+  return { success: true };
+}
