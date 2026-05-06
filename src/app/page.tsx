@@ -26,7 +26,7 @@ export default async function HomePage({ searchParams }: Props) {
 
   const { data: rawPolls } = await query;
 
-  const polls: Poll[] = (rawPolls ?? []).map((p) => ({
+  const allPolls: Poll[] = (rawPolls ?? []).map((p) => ({
     ...p,
     options: undefined,
     total_votes: (p.options ?? []).reduce(
@@ -35,7 +35,24 @@ export default async function HomePage({ searchParams }: Props) {
     ),
   }));
 
-  /* Determine which polls the user has already voted on */
+  /* 중복 제거 */
+  const seen = new Set<string>();
+  const polls = allPolls.filter((p) => {
+    if (seen.has(p.id)) return false;
+    seen.add(p.id);
+    return true;
+  });
+
+  /* 정치 카테고리 우선, 나머지는 최신순 유지 */
+  if (!category) {
+    polls.sort((a, b) => {
+      if (a.category === "정치" && b.category !== "정치") return -1;
+      if (a.category !== "정치" && b.category === "정치") return 1;
+      return 0;
+    });
+  }
+
+  /* 투표 여부 확인 */
   const cookieStore = await cookies();
   const fingerprint = cookieStore.get("voter_id")?.value ?? null;
   const votedPollIds = new Set<string>();
@@ -45,20 +62,18 @@ export default async function HomePage({ searchParams }: Props) {
       .from("votes")
       .select("poll_id")
       .eq("voter_fingerprint", fingerprint)
-      .in(
-        "poll_id",
-        polls.map((p) => p.id)
-      );
+      .in("poll_id", polls.map((p) => p.id));
     (voteRecords ?? []).forEach((r: { poll_id: string }) =>
       votedPollIds.add(r.poll_id)
     );
   }
 
-  const [featured, ...rest] = polls;
-  const secondary = rest.slice(0, 2);
-  const remaining = rest.slice(2);
-  /* Pick a different poll for the sidebar quick-vote widget */
-  const sidebarPollId = secondary[0]?.id ?? remaining[0]?.id;
+  /* 1면 섹션 분배 */
+  const [headline, second, third, ...rest] = polls;
+  const duo = [second, third].filter(Boolean);
+  const columns = rest;
+
+  const sidebarPollId = duo[0]?.id ?? columns[0]?.id;
 
   return (
     <div className="min-h-screen flex flex-col text-[#1c1712]">
@@ -82,50 +97,64 @@ export default async function HomePage({ searchParams }: Props) {
           </div>
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-[1fr_280px] gap-6">
-            {/* ── Main content ── */}
+
+            {/* ── 메인 1면 ── */}
             <div>
-              {/* Featured + secondary */}
-              <section className="mb-8">
-                <div className="border-t-4 border-black mb-4">
-                  <span className="text-xs font-bold tracking-widest uppercase bg-black text-white px-2 py-0.5">
-                    주요 투표
-                  </span>
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-0 border-2 border-[#1c1712]">
-                  {/* Big headline */}
-                  <div className="md:col-span-2 border-b-2 md:border-b-0 md:border-r-2 border-[#1c1712]">
-                    {featured && (
-                      <VoteCard
-                        poll={featured}
-                        size="large"
-                        voted={votedPollIds.has(featured.id)}
-                      />
-                    )}
+
+              {/* ① 헤드라인 */}
+              {headline && (
+                <section className="mb-0">
+                  <div className="border-t-4 border-[#1c1712] flex items-baseline gap-3 pt-1 pb-1 mb-0">
+                    <span className="text-[10px] font-black tracking-[0.35em] uppercase bg-[#1c1712] text-[#f0e5c0] px-2 py-0.5">
+                      헤드라인
+                    </span>
+                    <span className="text-[10px] text-[#8c8070] tracking-widest">
+                      오늘의 주요 투표
+                    </span>
                   </div>
-                  {/* Secondary list */}
-                  <div className="flex flex-col">
-                    {secondary.map((poll) => (
+                  <div className="border-2 border-[#1c1712]">
+                    <VoteCard
+                      poll={headline}
+                      size="headline"
+                      voted={votedPollIds.has(headline.id)}
+                    />
+                  </div>
+                </section>
+              )}
+
+              {/* ② 2단 중단 */}
+              {duo.length > 0 && (
+                <section className="mt-5 mb-0">
+                  <div className="border-t-2 border-[#1c1712] flex items-baseline gap-3 pt-1 pb-1">
+                    <span className="text-[10px] font-black tracking-[0.35em] uppercase text-[#1c1712]">
+                      주요 투표
+                    </span>
+                    <span className="flex-1 border-t border-[#c8bfa8] self-center" />
+                  </div>
+                  <div className="border-2 border-[#1c1712] grid grid-cols-1 sm:grid-cols-2 divide-y-2 sm:divide-y-0 sm:divide-x-2 divide-[#1c1712]">
+                    {duo.map((poll) => (
                       <VoteCard
                         key={poll.id}
                         poll={poll}
-                        size="small"
+                        size="duo"
                         voted={votedPollIds.has(poll.id)}
                       />
                     ))}
                   </div>
-                </div>
-              </section>
+                </section>
+              )}
 
-              {/* Remaining polls — 3-column grid */}
-              {remaining.length > 0 && (
-                <section>
-                  <div className="border-t-2 border-black mb-4">
-                    <span className="text-xs font-bold tracking-widest uppercase text-gray-500 py-1 inline-block">
+              {/* ③ 3단 하단 */}
+              {columns.length > 0 && (
+                <section className="mt-5">
+                  <div className="border-t-2 border-[#8a8070] flex items-baseline gap-3 pt-1 pb-1">
+                    <span className="text-[10px] font-bold tracking-[0.3em] uppercase text-[#6b6356]">
                       더 많은 투표
                     </span>
+                    <span className="flex-1 border-t border-[#c8bfa8] self-center" />
                   </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {remaining.map((poll) => (
+                  <div className="border border-[#8a8070] grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x divide-[#8a8070]">
+                    {columns.map((poll) => (
                       <VoteCard
                         key={poll.id}
                         poll={poll}
@@ -138,7 +167,7 @@ export default async function HomePage({ searchParams }: Props) {
               )}
             </div>
 
-            {/* ── Right sidebar ── */}
+            {/* ── 우측 사이드바 ── */}
             <Sidebar pollId={sidebarPollId} />
           </div>
         )}
