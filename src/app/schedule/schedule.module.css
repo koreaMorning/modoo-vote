@@ -1,0 +1,268 @@
+.paper {
+  width: 100%;
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+/* 헤더 */
+.header {
+  margin-bottom: 12px;
+}
+.headerTop {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  border-bottom: 3px double #1a1710;
+  padding-bottom: 10px;
+  margin-bottom: 8px;
+}
+.headerLogo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.logoMark {
+  width: 48px;
+  height: 48px;
+  border: 2px solid #1a1710;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-serif), "Apple Myungjo", "바탕", Georgia, serif;
+  font-size: 10px;
+  font-weight: 700;
+  color: #1a1710;
+  text-align: center;
+  line-height: 1.3;
+  flex-shrink: 0;
+}
+.headerMainTitle {
+  font-family: var(--font-serif), "Apple Myungjo", "바탕", Georgia, serif;
+  font-size: 26px;
+  font-weight: 700;
+  color: #1a1710;
+  letter-spacing: 6px;
+  line-height: 1;
+  margin-bottom: 4px;
+}
+.headerSubTitle {
+  font-family: var(--font-sans), "Apple SD Gothic Neo", "맑은 고딕", sans-serif;
+  font-size: 9px;
+  letter-spacing: 3px;
+  color: #5a5040;
+}
+.headerRight {
+  text-align: right;
+}
+.headerDate {
+  font-family: var(--font-sans), "Apple SD Gothic Neo", "맑은 고딕", sans-serif;
+  font-size: 11px;
+  color: #5a5040;
+  margin-bottom: 4px;
+}
+.headerNotice {
+  font-family: var(--font-sans), "Apple SD Gothic Neo", "맑은 고딕", sans-serif;
+  font-size: 9px;
+  color: #7a7060;
+  font-style: italic;
+}
+
+/* 테이블 */
+.scheduleWrap {
+  overflow-x: auto;
+}
+.scheduleTable {
+  width: 100%;
+  border-collapse: collapse;
+  border: 2px solid #1a1710;
+  font-family: var(--font-serif), "Apple Myungjo", "바탕", Georgia, serif;
+}
+.scheduleTable thead tr th {
+  border: 1px solid #1a1710;
+  padding: 8px 6px;
+  text-align: center;
+  font-weight: 700;
+  background: #1a1710;
+  color: #d8d0bc;
+  font-family: var(--font-serif), "Apple Myungjo", "바탕", Georgia, serif;
+  font-size: 12px;
+  letter-spacing: 1px;
+}
+.thRank {
+  width: 50px;
+  font-size: 11px !important;
+}
+.thPlatform {
+  width: 18%;
+}
+.scheduleTable tbody tr td {
+  border: 1px solid #8a8070;
+  padding: 8px;
+  vertical-align: top;
+}
+.scheduleTable tbody tr:nth-child(odd) td {
+  background: rgba(255, 255, 255, 0.12);
+}
+.scheduleTable tbody tr:nth-child(even) td {
+  background: rgba(0, 0, 0, 0.05);
+}
+.scheduleTable tbody tr:hover td {
+  background: rgba(26, 23, 16, 0.08);
+}
+
+/* 순위 셀 */
+.rankCell {
+  text-align: center;
+  vertical-align: middle !important;
+  background: #c8c0a8 !important;
+}
+.rankCircle {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: 1.5px solid #1a1710;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 700;
+  color: #1a1710;
+  margin: 0 auto 3px;
+  font-family: var(--font-serif), "Apple Myungjo", "바탕", Georgia, serif;
+}
+.rankCircleTop3 {
+  background: #1a1710;
+  color: #d8d0bc;
+}
+.rankChange {
+  font-family: var(--font-sans), "Apple SD Gothic Neo", "맑은 고딕", sans-serif;
+  font-size: 9px;
+  font-weight: 700;
+  display: block;
+  text-align: center;
+}
+.up {
+  color: #1a5a2a;
+}
+.down {
+  color: #8b1a1a;
+}
+.newRank {
+  color: #8b1a1a;
+  font-size: 8px;
+}
+
+/* 프로그램 셀 */
+.progTitle {
+  font-size: 13px;
+  font-weight: 700;
+  color: #1a1710;
+  line-height: 1.4;
+  margin-bottom: 3px;
+}
+.progGenre {
+  font-family: var(--font-sans), "Apple SD Gothic Neo", "맑은 고딕", sans-serif;
+  font-size: 9px;
+  color: #7a7060;
+  margin-bottom: 3px;
+  letter-spacing: 0.5px;
+}
+.progDesc {
+  font-family: var(--font-sans), "Apple SD Gothic Neo", "맑은 고딕", sans-serif;
+  font-size: 10px;
+  color: #3a3020;
+  line-height: 1.6;
+  font-weight: 300;
+  margin-bottom: 4px;
+}
+.progBottom {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+.badgeNew {
+  font-family: var(--font-sans), "Apple SD Gothic Neo", "맑은 고딕", sans-serif;
+  font-size: 8px;
+  background: #1a1710;
+  color: #d8d0bc;
+  padding: 1px 5px;
+  font-weight: 700;
+  letter-spacing: 1px;
+}
+.badgeHot {
+  font-family: var(--font-sans), "Apple SD Gothic Neo", "맑은 고딕", sans-serif;
+  font-size: 8px;
+  border: 1px solid #1a1710;
+  color: #1a1710;
+  padding: 1px 5px;
+  font-weight: 700;
+}
+.progEp {
+  font-family: var(--font-sans), "Apple SD Gothic Neo", "맑은 고딕", sans-serif;
+  font-size: 9px;
+  color: #7a7060;
+}
+.emptyCell {
+  text-align: center;
+  color: #a8a090;
+  font-size: 20px;
+  vertical-align: middle !important;
+}
+
+/* 섹션 구분 행 */
+.sectionRow td {
+  background: #1a1710 !important;
+  color: #d8d0bc;
+  text-align: center;
+  font-family: var(--font-sans), "Apple SD Gothic Neo", "맑은 고딕", sans-serif;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 4px;
+  padding: 6px !important;
+  border-color: #1a1710 !important;
+}
+
+/* 공개예정 셀 */
+.upcomingTitle {
+  font-size: 12px;
+  font-weight: 700;
+  color: #1a1710;
+  margin-bottom: 2px;
+}
+.upcomingDate {
+  font-family: var(--font-sans), "Apple SD Gothic Neo", "맑은 고딕", sans-serif;
+  font-size: 9px;
+  color: #8b1a1a;
+  font-weight: 700;
+  margin-bottom: 3px;
+}
+.upcomingDesc {
+  font-family: var(--font-sans), "Apple SD Gothic Neo", "맑은 고딕", sans-serif;
+  font-size: 10px;
+  color: #5a5040;
+  line-height: 1.5;
+  font-weight: 300;
+}
+.upcomingMonth {
+  font-family: var(--font-sans), "Apple SD Gothic Neo", "맑은 고딕", sans-serif;
+  font-size: 9px;
+  font-weight: 700;
+  color: #8b1a1a;
+  text-align: center;
+  vertical-align: middle !important;
+  background: #c8c0a8 !important;
+}
+
+/* 푸터 */
+.footer {
+  margin-top: 10px;
+  border-top: 1px solid #8a8070;
+  padding-top: 6px;
+  display: flex;
+  justify-content: space-between;
+  font-family: var(--font-sans), "Apple SD Gothic Neo", "맑은 고딕", sans-serif;
+  font-size: 9px;
+  color: #7a7060;
+}

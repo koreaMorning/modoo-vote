@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OTT 프로그램 편성표</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@300;400;600;700&family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: 'Noto Serif KR', serif;
+  background: #2A2520;
+  padding: 20px;
+  display: flex;
+  justify-content: center;
+}
+.paper {
+  width: 100%;
+  max-width: 960px;
+  background: #D8D0BC;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='400'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='400' height='400' filter='url(%23n)' opacity='0.07'/%3E%3C/svg%3E");
+  padding: 20px;
+}
+
+/* 헤더 */
+.header { margin-bottom: 12px; }
+.header-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  border-bottom: 3px double #1A1710;
+  padding-bottom: 10px;
+  margin-bottom: 8px;
+}
+.header-logo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.logo-mark {
+  width: 48px;
+  height: 48px;
+  border: 2px solid #1A1710;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Noto Serif KR', serif;
+  font-size: 10px;
+  font-weight: 700;
+  color: #1A1710;
+  text-align: center;
+  line-height: 1.3;
+  flex-shrink: 0;
+}
+.header-title-wrap { }
+.header-main-title {
+  font-family: 'Noto Serif KR', serif;
+  font-size: 26px;
+  font-weight: 700;
+  color: #1A1710;
+  letter-spacing: 6px;
+  line-height: 1;
+  margin-bottom: 4px;
+}
+.header-sub-title {
+  font-family: 'Noto Sans KR', sans-serif;
+  font-size: 9px;
+  letter-spacing: 3px;
+  color: #5A5040;
+}
+.header-right {
+  text-align: right;
+}
+.header-date {
+  font-family: 'Noto Sans KR', sans-serif;
+  font-size: 11px;
+  color: #5A5040;
+  margin-bottom: 4px;
+}
+.header-notice {
+  font-family: 'Noto Sans KR', sans-serif;
+  font-size: 9px;
+  color: #7A7060;
+  font-style: italic;
+}
+
+/* 테이블 */
+.schedule-wrap { overflow-x: auto; }
+.schedule-table {
+  width: 100%;
+  border-collapse: collapse;
+  border: 2px solid #1A1710;
+  font-family: 'Noto Serif KR', serif;
+}
+
+/* 헤더 */
+.schedule-table thead tr th {
+  border: 1px solid #1A1710;
+  padding: 8px 6px;
+  text-align: center;
+  font-weight: 700;
+  background: #1A1710;
+  color: #D8D0BC;
+  font-family: 'Noto Serif KR', serif;
+  font-size: 12px;
+  letter-spacing: 1px;
+}
+.th-rank { width: 50px; font-size: 11px; }
+.th-platform { width: 18%; }
+
+/* 데이터 행 */
+.schedule-table tbody tr td {
+  border: 1px solid #8A8070;
+  padding: 8px 8px;
+  vertical-align: top;
+}
+.schedule-table tbody tr:nth-child(odd) td { background: rgba(255,255,255,0.12); }
+.schedule-table tbody tr:nth-child(even) td { background: rgba(0,0,0,0.05); }
+.schedule-table tbody tr:hover td { background: rgba(26,23,16,0.08); }
+
+/* 순위 셀 */
+.rank-cell {
+  text-align: center;
+  vertical-align: middle !important;
+  background: #C8C0A8 !important;
+}
+.rank-circle {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: 1.5px solid #1A1710;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 700;
+  color: #1A1710;
+  margin: 0 auto 3px;
+  font-family: 'Noto Serif KR', serif;
+}
+.rank-circle.top3 { background: #1A1710; color: #D8D0BC; }
+.rank-change {
+  font-family: 'Noto Sans KR', sans-serif;
+  font-size: 9px;
+  font-weight: 700;
+  display: block;
+  text-align: center;
+}
+.up { color: #1A5A2A; }
+.down { color: #8B1A1A; }
+.new-rank { color: #8B1A1A; font-size: 8px; }
+
+/* 프로그램 셀 */
+.prog-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: #1A1710;
+  line-height: 1.4;
+  margin-bottom: 3px;
+}
+.prog-genre {
+  font-family: 'Noto Sans KR', sans-serif;
+  font-size: 9px;
+  color: #7A7060;
+  margin-bottom: 3px;
+  letter-spacing: 0.5px;
+}
+.prog-desc {
+  font-family: 'Noto Sans KR', sans-serif;
+  font-size: 10px;
+  color: #3A3020;
+  line-height: 1.6;
+  font-weight: 300;
+  margin-bottom: 4px;
+}
+.prog-bottom {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+.badge-new {
+  font-family: 'Noto Sans KR', sans-serif;
+  font-size: 8px;
+  background: #1A1710;
+  color: #D8D0BC;
+  padding: 1px 5px;
+  font-weight: 700;
+  letter-spacing: 1px;
+}
+.badge-hot {
+  font-family: 'Noto Sans KR', sans-serif;
+  font-size: 8px;
+  border: 1px solid #1A1710;
+  color: #1A1710;
+  padding: 1px 5px;
+  font-weight: 700;
+}
+.prog-ep {
+  font-family: 'Noto Sans KR', sans-serif;
+  font-size: 9px;
+  color: #7A7060;
+}
+.empty-cell {
+  text-align: center;
+  color: #A8A090;
+  font-size: 20px;
+  vertical-align: middle !important;
+}
+
+/* 섹션 구분 행 */
+.section-row td {
+  background: #1A1710 !important;
+  color: #D8D0BC;
+  text-align: center;
+  font-family: 'Noto Sans KR', sans-serif;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 4px;
+  padding: 6px !important;
+  border-color: #1A1710 !important;
+}
+
+/* 공개예정 셀 */
+.upcoming-title {
+  font-size: 12px;
+  font-weight: 700;
+  color: #1A1710;
+  margin-bottom: 2px;
+}
+.upcoming-date {
+  font-family: 'Noto Sans KR', sans-serif;
+  font-size: 9px;
+  color: #8B1A1A;
+  font-weight: 700;
+  margin-bottom: 3px;
+}
+.upcoming-desc {
+  font-family: 'Noto Sans KR', sans-serif;
+  font-size: 10px;
+  color: #5A5040;
+  line-height: 1.5;
+  font-weight: 300;
+}
+
+/* 푸터 */
+.footer {
+  margin-top: 10px;
+  border-top: 1px solid #8A8070;
+  padding-top: 6px;
+  display: flex;
+  justify-content: space-between;
+  font-family: 'Noto Sans KR', sans-serif;
+  font-size: 9px;
+  color: #7A7060;
+}
+</style>
+</head>
+<body>
+<div class="paper">
+
+  <!-- 헤더 -->
+  <div class="header">
+    <div class="header-top">
+      <div class="header-logo">
+        <div class="logo-mark">모두의<br>투표</div>
+        <div class="header-title-wrap">
+          <div class="header-main-title">OTT 프로그램 편성표</div>
+          <div class="header-sub-title">STREAMING SERVICE WEEKLY RANKINGS</div>
+        </div>
+      </div>
+      <div class="header-right">
+        <div class="header-date">2026년 4월 30일 목요일</div>
+        <div class="header-notice">※ 순위는 매일 오전 9시 업데이트됩니다</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 편성표 -->
+  <div class="schedule-wrap">
+  <table class="schedule-table">
+    <thead>
+      <tr>
+        <th class="th-rank">순위</th>
+        <th class="th-platform">넷플릭스</th>
+        <th class="th-platform">티빙</th>
+        <th class="th-platform">웨이브</th>
+        <th class="th-platform">디즈니+</th>
+        <th class="th-platform">쿠팡플레이</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td class="rank-cell"><div class="rank-circle top3">1</div><span class="rank-change new-rank">NEW</span></td>
+        <td><div class="prog-title">폭풍의 계절</div><div class="prog-genre">스릴러 · 범죄 · 16부작</div><div class="prog-desc">전직 형사가 연쇄 실종 사건을 추적하며 충격적 진실과 마주한다</div><div class="prog-bottom"><span class="badge-new">NEW</span><span class="prog-ep">1-2화 공개</span></div></td>
+        <td><div class="prog-title">봄날의 기억</div><div class="prog-genre">로맨스 · 드라마 · 12부작</div><div class="prog-desc">10년 만에 재회한 첫사랑, 다시 시작할 수 있을까</div><div class="prog-bottom"><span class="badge-new">NEW</span><span class="prog-ep">1-2화 공개</span></div></td>
+        <td><div class="prog-title">마지막 형사</div><div class="prog-genre">액션 · 범죄 · 10부작</div><div class="prog-desc">은퇴를 앞둔 형사의 마지막 사건, 도시를 뒤흔들다</div><div class="prog-bottom"><span class="badge-hot">HOT</span><span class="prog-ep">5-6화 공개</span></div></td>
+        <td><div class="prog-title">마블: 새벽의 전사</div><div class="prog-genre">액션 · SF · 6부작</div><div class="prog-desc">새로운 히어로의 등장, 마블 유니버스가 다시 열린다</div><div class="prog-bottom"><span class="badge-new">NEW</span><span class="prog-ep">1화 공개</span></div></td>
+        <td><div class="prog-title">야구의 신</div><div class="prog-genre">스포츠 · 드라마 · 8부작</div><div class="prog-desc">무명 투수의 기적 같은 역전 스토리</div><div class="prog-bottom"><span class="badge-hot">HOT</span><span class="prog-ep">3-4화 공개</span></div></td>
+      </tr>
+      <tr>
+        <td class="rank-cell"><div class="rank-circle top3">2</div><span class="rank-change down">▼ 1</span></td>
+        <td><div class="prog-title">오징어 게임 3</div><div class="prog-genre">스릴러 · 서바이벌 · 9부작</div><div class="prog-desc">다시 시작된 게임, 이번엔 누가 살아남을 것인가</div><div class="prog-bottom"><span class="badge-hot">HOT</span><span class="prog-ep">전체 공개</span></div></td>
+        <td><div class="prog-title">환승연애 5</div><div class="prog-genre">연애 리얼리티</div><div class="prog-desc">전 연인과의 재회, 새로운 사랑의 시작</div><div class="prog-bottom"><span class="prog-ep">매주 목요일</span></div></td>
+        <td><div class="prog-title">다크 시티: 리부트</div><div class="prog-genre">SF · 스릴러 · 8부작</div><div class="prog-desc">2035년 대도시를 배경으로 한 근미래 SF</div><div class="prog-bottom"><span class="prog-ep">7-8화 공개</span></div></td>
+        <td><div class="prog-title">내셔널 지오그래픽: 한국의 야생</div><div class="prog-genre">다큐멘터리</div><div class="prog-desc">아직 알려지지 않은 한국 자연의 경이로운 순간들</div><div class="prog-bottom"><span class="prog-ep">전체 공개</span></div></td>
+        <td><div class="prog-title">SNL 코리아 시즌 8</div><div class="prog-genre">버라이어티 · 코미디</div><div class="prog-desc">매주 토요일 밤, 대한민국이 웃는다</div><div class="prog-bottom"><span class="prog-ep">매주 토요일</span></div></td>
+      </tr>
+      <tr>
+        <td class="rank-cell"><div class="rank-circle top3">3</div><span class="rank-change up">▲ 2</span></td>
+        <td><div class="prog-title">흑백요리사 3</div><div class="prog-genre">요리 예능</div><div class="prog-desc">백수저 vs 흑수저, 요리 대결의 귀환</div><div class="prog-bottom"><span class="badge-new">NEW</span><span class="prog-ep">1화 공개</span></div></td>
+        <td><div class="prog-title">눈물의 여왕 2</div><div class="prog-genre">멜로 · 드라마 · 16부작</div><div class="prog-desc">다시 찾아온 사랑, 이번엔 끝까지 지킨다</div><div class="prog-bottom"><span class="prog-ep">1-2화 공개</span></div></td>
+        <td><div class="prog-title">우리들의 이야기</div><div class="prog-genre">가족 · 드라마 · 10부작</div><div class="prog-desc">세 자매의 성장과 화해를 담은 따뜻한 이야기</div><div class="prog-bottom"><span class="prog-ep">3-4화 공개</span></div></td>
+        <td><div class="prog-title">스타워즈: 여명</div><div class="prog-genre">SF · 액션 · 8부작</div><div class="prog-desc">은하계 새로운 위협, 새벽의 전사들이 나선다</div><div class="prog-bottom"><span class="prog-ep">전체 공개</span></div></td>
+        <td><div class="prog-title">무빙 시즌 2</div><div class="prog-genre">액션 · 슈퍼히어로 · 12부작</div><div class="prog-desc">능력자들의 귀환, 더 커진 위협이 다가온다</div><div class="prog-bottom"><span class="badge-hot">HOT</span><span class="prog-ep">5-6화 공개</span></div></td>
+      </tr>
+      <tr>
+        <td class="rank-cell"><div class="rank-circle">4</div><span class="rank-change up">▲ 1</span></td>
+        <td><div class="prog-title">사랑의 불시착 리마스터</div><div class="prog-genre">로맨스 · 드라마 · 16부작</div><div class="prog-desc">4K 리마스터링으로 다시 만나는 명작</div><div class="prog-bottom"><span class="prog-ep">전체 공개</span></div></td>
+        <td><div class="prog-title">피지컬: 100 시즌 4</div><div class="prog-genre">서바이벌 · 예능</div><div class="prog-desc">대한민국 최강의 몸을 가진 100인의 대결</div><div class="prog-bottom"><span class="prog-ep">매주 화요일</span></div></td>
+        <td><div class="prog-title">비밀의 숲 3</div><div class="prog-genre">법정 · 스릴러 · 12부작</div><div class="prog-desc">황시목과 한여진, 더 깊은 음모를 파헤친다</div><div class="prog-bottom"><span class="badge-new">NEW</span><span class="prog-ep">1-2화 공개</span></div></td>
+        <td><div class="prog-title">그레이 아나토미 시즌 21</div><div class="prog-genre">의학 드라마</div><div class="prog-desc">메레디스 그레이의 이야기는 계속된다</div><div class="prog-bottom"><span class="prog-ep">매주 목요일</span></div></td>
+        <td><div class="prog-title">손흥민: 더 라스트 댄스</div><div class="prog-genre">스포츠 다큐</div><div class="prog-desc">손흥민의 마지막 시즌 밀착 다큐멘터리</div><div class="prog-bottom"><span class="badge-hot">HOT</span><span class="prog-ep">전체 공개</span></div></td>
+      </tr>
+      <tr>
+        <td class="rank-cell"><div class="rank-circle">5</div><span class="rank-change down">▼ 2</span></td>
+        <td><div class="prog-title">지금 우리 학교는 3</div><div class="prog-genre">호러 · 좀비 · 12부작</div><div class="prog-desc">바이러스가 다시 퍼진다, 생존을 위한 사투</div><div class="prog-bottom"><span class="badge-new">NEW</span><span class="prog-ep">1-4화 공개</span></div></td>
+        <td><div class="prog-title">술꾼도시여자들 3</div><div class="prog-genre">코미디 · 드라마 · 10부작</div><div class="prog-desc">세 친구의 웃음과 눈물이 담긴 공감 드라마</div><div class="prog-bottom"><span class="prog-ep">3-4화 공개</span></div></td>
+        <td><div class="prog-title">펜트하우스 리부트</div><div class="prog-genre">막장 · 드라마 · 20부작</div><div class="prog-desc">욕망과 복수의 끝없는 소용돌이가 다시 시작</div><div class="prog-bottom"><span class="badge-new">NEW</span><span class="prog-ep">1-2화 공개</span></div></td>
+        <td><div class="prog-title">인디아나 존스 5</div><div class="prog-genre">어드벤처 · 영화</div><div class="prog-desc">전설의 고고학자가 돌아왔다</div><div class="prog-bottom"><span class="prog-ep">스트리밍 시작</span></div></td>
+        <td><div class="prog-title">이상한 나라의 수학자 2</div><div class="prog-genre">드라마 · 교육 · 12부작</div><div class="prog-desc">천재 수학자와 학생들의 감동적인 2막</div><div class="prog-bottom"><span class="prog-ep">5-6화 공개</span></div></td>
+      </tr>
+      <tr>
+        <td class="rank-cell"><div class="rank-circle">6</div><span class="rank-change up">▲ 3</span></td>
+        <td><div class="prog-title">킹덤: 아신전 2</div><div class="prog-genre">역사 · 좀비 · 8부작</div><div class="prog-desc">아신의 복수는 끝나지 않았다</div><div class="prog-bottom"><span class="prog-ep">3-4화 공개</span></div></td>
+        <td><div class="prog-title">나는 SOLO 시즌 25</div><div class="prog-genre">연애 리얼리티</div><div class="prog-desc">진짜 인연을 찾아 떠나는 솔로들의 여정</div><div class="prog-bottom"><span class="prog-ep">매주 수요일</span></div></td>
+        <td><div class="prog-title">모범택시 3</div><div class="prog-genre">액션 · 복수 · 16부작</div><div class="prog-desc">무지개 운수 택시가 다시 달린다</div><div class="prog-bottom"><span class="prog-ep">전체 공개</span></div></td>
+        <td><div class="prog-title">픽사: 엘리멘탈 2</div><div class="prog-genre">애니메이션 · 가족</div><div class="prog-desc">엠버와 웨이드의 사랑이 새로운 모험으로</div><div class="prog-bottom"><span class="badge-new">NEW</span><span class="prog-ep">스트리밍 시작</span></div></td>
+        <td><div class="prog-title">류현진: 마운드의 전설</div><div class="prog-genre">스포츠 다큐</div><div class="prog-desc">류현진의 빅리그 도전 10년의 기록</div><div class="prog-bottom"><span class="prog-ep">전체 공개</span></div></td>
+      </tr>
+      <tr>
+        <td class="rank-cell"><div class="rank-circle">7</div><span class="rank-change down">▼ 1</span></td>
+        <td><div class="prog-title">더 글로리 시즌 3</div><div class="prog-genre">복수 · 드라마 · 8부작</div><div class="prog-desc">문동은의 복수는 완전히 끝났는가</div><div class="prog-bottom"><span class="prog-ep">전체 공개</span></div></td>
+        <td><div class="prog-title">미스터 션샤인 리마스터</div><div class="prog-genre">역사 · 로맨스 · 24부작</div><div class="prog-desc">4K로 다시 만나는 역사 대작</div><div class="prog-bottom"><span class="prog-ep">전체 공개</span></div></td>
+        <td><div class="prog-title">경이로운 소문 3</div><div class="prog-genre">판타지 · 액션 · 12부작</div><div class="prog-desc">카운터들의 새로운 악령 사냥이 시작된다</div><div class="prog-bottom"><span class="badge-new">NEW</span><span class="prog-ep">1-2화 공개</span></div></td>
+        <td><div class="prog-title">만달로리안 시즌 4</div><div class="prog-genre">SF · 액션</div><div class="prog-desc">만달로리안과 그로구의 새로운 모험</div><div class="prog-bottom"><span class="prog-ep">매주 수요일</span></div></td>
+        <td><div class="prog-title">안나라수마나라 2</div><div class="prog-genre">판타지 · 드라마 · 8부작</div><div class="prog-desc">마법사와 소녀의 환상적인 이야기가 계속된다</div><div class="prog-bottom"><span class="prog-ep">1-2화 공개</span></div></td>
+      </tr>
+      <tr>
+        <td class="rank-cell"><div class="rank-circle">8</div><span class="rank-change up">▲ 1</span></td>
+        <td><div class="prog-title">나르코스: 코리아</div><div class="prog-genre">범죄 · 드라마 · 10부작</div><div class="prog-desc">한국 마약 조직의 실체를 파헤치다</div><div class="prog-bottom"><span class="badge-new">NEW</span><span class="prog-ep">1-3화 공개</span></div></td>
+        <td><div class="prog-title">복수해라 시즌 2</div><div class="prog-genre">법정 · 스릴러 · 10부작</div><div class="prog-desc">정의를 위한 복수가 다시 시작된다</div><div class="prog-bottom"><span class="prog-ep">5-6화 공개</span></div></td>
+        <td><div class="prog-title">연인 리마스터</div><div class="prog-genre">역사 · 로맨스 · 20부작</div><div class="prog-desc">병자호란을 배경으로 한 애절한 사랑 이야기</div><div class="prog-bottom"><span class="prog-ep">전체 공개</span></div></td>
+        <td><div class="prog-title">아가사 올: 마녀재판</div><div class="prog-genre">미스터리 · 코미디</div><div class="prog-desc">완다비전의 그 마녀, 아가사가 돌아왔다</div><div class="prog-bottom"><span class="prog-ep">전체 공개</span></div></td>
+        <td><div class="prog-title">치얼업 시즌 2</div><div class="prog-genre">청춘 · 로맨스 · 12부작</div><div class="prog-desc">응원단의 열정과 사랑이 다시 펼쳐진다</div><div class="prog-bottom"><span class="prog-ep">3-4화 공개</span></div></td>
+      </tr>
+      <tr>
+        <td class="rank-cell"><div class="rank-circle">9</div><span class="rank-change down">▼ 3</span></td>
+        <td><div class="prog-title">종이의 집: 공동경제구역 2</div><div class="prog-genre">범죄 · 액션 · 12부작</div><div class="prog-desc">교수의 새로운 작전이 다시 시작된다</div><div class="prog-bottom"><span class="prog-ep">전체 공개</span></div></td>
+        <td><div class="prog-title">작은 아씨들 2</div><div class="prog-genre">스릴러 · 드라마 · 12부작</div><div class="prog-desc">세 자매의 두 번째 이야기, 더 큰 음모가 기다린다</div><div class="prog-bottom"><span class="prog-ep">1-2화 공개</span></div></td>
+        <td><div class="prog-title">허쉬 시즌 2</div><div class="prog-genre">법정 · 미스터리 · 10부작</div><div class="prog-desc">진실을 말해야 하는 기자의 딜레마</div><div class="prog-bottom"><span class="prog-ep">7-8화 공개</span></div></td>
+        <td><div class="prog-title">원더우먼 3</div><div class="prog-genre">액션 · 슈퍼히어로</div><div class="prog-desc">다이애나 프린스가 새로운 적과 맞선다</div><div class="prog-bottom"><span class="badge-new">NEW</span><span class="prog-ep">스트리밍 시작</span></div></td>
+        <td><div class="prog-title">사내맞선 시즌 2</div><div class="prog-genre">로맨스 · 코미디 · 12부작</div><div class="prog-desc">회사 내 맞선, 이번엔 진짜 사랑으로</div><div class="prog-bottom"><span class="prog-ep">전체 공개</span></div></td>
+      </tr>
+      <tr>
+        <td class="rank-cell"><div class="rank-circle">10</div><span class="rank-change up">▲ 2</span></td>
+        <td><div class="prog-title">수리남 시즌 2</div><div class="prog-genre">범죄 · 액션 · 8부작</div><div class="prog-desc">강인구의 두 번째 잠입 작전이 시작된다</div><div class="prog-bottom"><span class="prog-ep">3-4화 공개</span></div></td>
+        <td><div class="prog-title">이상한 변호사 우영우 2</div><div class="prog-genre">법정 · 드라마 · 16부작</div><div class="prog-desc">우영우 변호사의 특별한 사건들이 계속된다</div><div class="prog-bottom"><span class="badge-hot">HOT</span><span class="prog-ep">1-2화 공개</span></div></td>
+        <td><div class="prog-title">고려거란전쟁 2</div><div class="prog-genre">역사 · 전쟁 · 20부작</div><div class="prog-desc">고려의 운명을 건 두 번째 전쟁이 시작된다</div><div class="prog-bottom"><span class="prog-ep">전체 공개</span></div></td>
+        <td><div class="prog-title">로키 시즌 3</div><div class="prog-genre">SF · 판타지</div><div class="prog-desc">시간의 신 로키의 새로운 모험</div><div class="prog-bottom"><span class="prog-ep">매주 화요일</span></div></td>
+        <td><div class="prog-title">약한영웅 Class 3</div><div class="prog-genre">액션 · 청춘 · 8부작</div><div class="prog-desc">두뇌로 싸우는 영웅의 세 번째 이야기</div><div class="prog-bottom"><span class="badge-new">NEW</span><span class="prog-ep">1-2화 공개</span></div></td>
+      </tr>
+
+      <!-- 공개예정 섹션 구분 -->
+      <tr class="section-row">
+        <td colspan="6">— 공 개 예 정 작 —</td>
+      </tr>
+
+      <tr>
+        <td class="rank-cell" style="font-family:'Noto Sans KR',sans-serif;font-size:9px;font-weight:700;color:#8B1A1A;text-align:center;vertical-align:middle;">5월<br>공개</td>
+        <td><div class="upcoming-title">이토록 친밀한 배신자</div><div class="upcoming-date">5월 9일 공개</div><div class="upcoming-desc">가장 가까운 사람이 가장 위험한 적이 된다. 김하늘 주연의 심리 스릴러</div></td>
+        <td><div class="upcoming-title">러브캐처 인 서울</div><div class="upcoming-date">5월 15일 공개</div><div class="upcoming-desc">사랑꾼과 현금꾼 사이, 진짜 마음을 찾아라</div></td>
+        <td><div class="upcoming-title">악마판사 시즌 2</div><div class="upcoming-date">5월 20일 공개</div><div class="upcoming-desc">강요한 판사의 두 번째 법정이 열린다</div></td>
+        <td><div class="upcoming-title">어벤져스: 시크릿 워즈</div><div class="upcoming-date">5월 극장 개봉 후 공개</div><div class="upcoming-desc">마블 시네마틱 유니버스 최대 규모의 결전</div></td>
+        <td><div class="upcoming-title">경성크리처 시즌 3</div><div class="upcoming-date">5월 30일 공개</div><div class="upcoming-desc">일제강점기 경성을 배경으로 한 공포 드라마</div></td>
+      </tr>
+      <tr>
+        <td class="rank-cell" style="font-family:'Noto Sans KR',sans-serif;font-size:9px;font-weight:700;color:#8B1A1A;text-align:center;vertical-align:middle;">6월<br>공개</td>
+        <td><div class="upcoming-title">D.P. 시즌 3</div><div class="upcoming-date">6월 공개 예정</div><div class="upcoming-desc">군무이탈 체포조의 이야기, 세 번째 임무가 시작된다</div></td>
+        <td><div class="upcoming-title">피의 게임 4</div><div class="upcoming-date">6월 공개 예정</div><div class="upcoming-desc">최고의 두뇌들이 모인 역대 최강 서바이벌</div></td>
+        <td><div class="upcoming-title">빅마우스 시즌 2</div><div class="upcoming-date">6월 공개 예정</div><div class="upcoming-desc">빅마우스로 알려진 변호사의 두 번째 이야기</div></td>
+        <td><div class="upcoming-title">월드컵 특집 다큐</div><div class="upcoming-date">6월 11일 월드컵 개막 맞춰 공개</div><div class="upcoming-desc">2026 FIFA 월드컵 태극전사 밀착 다큐멘터리</div></td>
+        <td><div class="upcoming-title">한 번 다녀왔습니다 시즌 2</div><div class="upcoming-date">6월 공개 예정</div><div class="upcoming-desc">평범한 일상 속 특별한 사랑 이야기의 귀환</div></td>
+      </tr>
+
+    </tbody>
+  </table>
+  </div>
+
+  <!-- 푸터 -->
+  <div class="footer">
+    <div>※ 본 편성표는 각 OTT 플랫폼의 공식 발표 기준이며 사정에 따라 변경될 수 있습니다</div>
+    <div>모두의 투표 편성표팀</div>
+  </div>
+
+</div>
+</body>
+</html>

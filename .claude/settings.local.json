@@ -5,7 +5,23 @@
       "Bash(npm run *)",
       "Bash(git init *)",
       "Bash(git add *)",
-      "Bash(git commit -m ' *)"
+      "Bash(git commit -m ' *)",
+      "Bash(git config *)",
+      "Bash(npx tsc *)",
+      "Bash(gh auth *)",
+      "Bash(npm list *)",
+      "Bash(git commit *)",
+      "Bash(winget install *)",
+      "Bash(gh --version)",
+      "PowerShell(Get-Process *)",
+      "PowerShell(Get-ChildItem *)",
+      "PowerShell(Test-Path *)",
+      "PowerShell(gh *)",
+      "PowerShell(gh auth *)",
+      "Bash(npx next *)",
+      "Bash(git push *)",
+      "Bash(Get-ChildItem -Path \"C:\\\\Users\\\\user\" -Filter \"ott_schedule*.html\" -Recurse -ErrorAction SilentlyContinue)",
+      "Bash(Select-Object FullName)"
     ]
   }
 }
