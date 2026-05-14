@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>모두의 투표 — 레이아웃 설계</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;600;700&family=Noto+Sans+KR:wght@400;500;700&family=UnifrakturMaguntia&display=swap" rel="stylesheet">
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Noto Sans KR', sans-serif; background: #2A2520; padding: 20px; }
+
+/* 탭 */
+.tabs { display: flex; gap: 10px; margin-bottom: 20px; }
+.tab { padding: 8px 20px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 500; background: #3A3530; color: #aaa; border: none; }
+.tab.active { background: #F4A020; color: #1A1710; }
+
+/* 페이지 컨테이너 */
+.page { display: none; }
+.page.active { display: block; }
+
+/* ===== 공통 신문 스타일 ===== */
+.newspaper { max-width: 900px; margin: 0 auto; background: #D8D0B8; font-family: 'Noto Serif KR', serif; position: relative; }
+.newspaper::before { content: ''; position: absolute; inset: 0; background-image: repeating-linear-gradient(0deg, transparent, transparent 28px, rgba(0,0,0,0.03) 28px, rgba(0,0,0,0.03) 29px); pointer-events: none; z-index: 0; }
+
+/* 마스트헤드 */
+.masthead { background: #C8C0A8; border-bottom: 3px double #1A1710; padding: 12px 20px 0; position: relative; z-index: 1; }
+.mh-top { display: flex; justify-content: space-between; font-size: 10px; color: #5A5040; margin-bottom: 6px; font-family: 'Noto Sans KR', sans-serif; }
+.mh-title { text-align: center; font-family: 'UnifrakturMaguntia', cursive; font-size: 52px; color: #1A1710; line-height: 1; margin-bottom: 4px; }
+.mh-sub { text-align: center; font-family: 'Noto Sans KR', sans-serif; font-size: 9px; letter-spacing: 4px; color: #5A5040; margin-bottom: 8px; }
+.mh-rule { height: 4px; border-top: 1px solid #1A1710; border-bottom: 1px solid #1A1710; margin-bottom: 0; }
+.mh-cats { display: flex; justify-content: center; gap: 0; }
+.mh-cat { font-family: 'Noto Sans KR', sans-serif; font-size: 11px; font-weight: 500; padding: 6px 16px; cursor: pointer; border-right: 0.5px solid #B8AE98; color: #3A3020; }
+.mh-cat:last-child { border-right: none; }
+.mh-cat.on { background: #1A1710; color: #D8D0B8; }
+
+/* 뉴스 티커 */
+.ticker { background: #1A1710; color: #D8D0B8; padding: 5px 20px; font-family: 'Noto Sans KR', sans-serif; font-size: 11px; overflow: hidden; white-space: nowrap; position: relative; z-index: 1; }
+.ticker-label { color: #F4A020; font-weight: 700; margin-right: 12px; }
+
+/* 본문 영역 */
+.body { padding: 16px 20px; position: relative; z-index: 1; }
+
+/* 라벨 */
+.section-label { font-family: 'Noto Sans KR', sans-serif; font-size: 9px; letter-spacing: 3px; font-weight: 700; color: #5A5040; text-align: center; border-top: 1px solid #A8A090; border-bottom: 1px solid #A8A090; padding: 3px 0; margin-bottom: 14px; }
+
+/* 1면 헤드라인 */
+.headline-grid { display: grid; grid-template-columns: 1.5fr 1fr; gap: 16px; margin-bottom: 14px; padding-bottom: 14px; border-bottom: 2px solid #1A1710; }
+.headline-main { }
+.headline-cat { font-family: 'Noto Sans KR', sans-serif; font-size: 9px; letter-spacing: 2px; font-weight: 700; color: #8B1A1A; margin-bottom: 6px; }
+.headline-title { font-size: 22px; font-weight: 700; line-height: 1.35; color: #1A1710; margin-bottom: 8px; }
+.headline-desc { font-size: 11px; line-height: 1.9; color: #3A3020; font-weight: 300; margin-bottom: 10px; }
+.headline-img { width: 100%; aspect-ratio: 16/9; background: #B8B0A0; border: 1px solid #A8A090; display: flex; align-items: center; justify-content: center; color: #7A7060; font-size: 11px; font-family: 'Noto Sans KR', sans-serif; margin-bottom: 8px; }
+.vote-bar-wrap { height: 4px; background: #B8B0A0; margin-bottom: 4px; }
+.vote-bar { height: 100%; background: #1A1710; }
+.vote-meta { display: flex; justify-content: space-between; font-family: 'Noto Sans KR', sans-serif; font-size: 9px; color: #7A7060; }
+.headline-side { display: flex; flex-direction: column; gap: 12px; }
+.side-item { padding-bottom: 12px; border-bottom: 0.5px solid #A8A090; cursor: pointer; }
+.side-item:last-child { border-bottom: none; padding-bottom: 0; }
+.side-cat { font-family: 'Noto Sans KR', sans-serif; font-size: 9px; letter-spacing: 1px; font-weight: 700; color: #8B1A1A; margin-bottom: 4px; }
+.side-title { font-size: 13px; font-weight: 600; line-height: 1.4; color: #1A1710; margin-bottom: 4px; }
+.side-meta { font-family: 'Noto Sans KR', sans-serif; font-size: 9px; color: #7A7060; }
+
+/* 3단 컬럼 */
+.three-col { display: grid; grid-template-columns: 1fr 0.5px 1fr 0.5px 1fr; margin-bottom: 14px; padding-bottom: 14px; border-bottom: 1px solid #A8A090; }
+.col-div { background: #A8A090; }
+.col { padding: 0 12px; cursor: pointer; }
+.col:first-child { padding-left: 0; }
+.col:last-child { padding-right: 0; }
+.col-cat { font-family: 'Noto Sans KR', sans-serif; font-size: 9px; letter-spacing: 2px; font-weight: 700; color: #8B1A1A; margin-bottom: 5px; }
+.col-title { font-size: 13px; font-weight: 600; line-height: 1.4; color: #1A1710; margin-bottom: 5px; }
+.col-text { font-size: 11px; line-height: 1.8; color: #3A3020; font-weight: 300; margin-bottom: 6px; }
+.col-meta { font-family: 'Noto Sans KR', sans-serif; font-size: 9px; color: #7A7060; }
+
+/* 광고 */
+.ad-full { border: 1px solid #A8A090; padding: 12px; margin-bottom: 14px; text-align: center; background: #C8C0A8; position: relative; }
+.ad-tag { position: absolute; top: -7px; left: 50%; transform: translateX(-50%); background: #C8C0A8; padding: 0 8px; font-family: 'Noto Sans KR', sans-serif; font-size: 8px; color: #7A7060; letter-spacing: 2px; border: 0.5px solid #A8A090; }
+.ad-title { font-family: 'UnifrakturMaguntia', cursive; font-size: 20px; color: #1A1710; margin-bottom: 4px; }
+.ad-text { font-family: 'Noto Sans KR', sans-serif; font-size: 10px; color: #5A5040; line-height: 1.6; }
+.ad-cta { display: inline-block; border: 1px solid #1A1710; padding: 3px 14px; font-family: 'Noto Sans KR', sans-serif; font-size: 10px; color: #1A1710; margin-top: 6px; cursor: pointer; }
+
+.ad-side { border: 1px solid #A8A090; padding: 10px; background: #C8C0A8; text-align: center; position: relative; margin-bottom: 10px; }
+
+/* OTT 편성표 */
+.ott-section { background: #C8C0A8; border: 1px solid #A8A090; padding: 14px; margin-bottom: 14px; }
+.ott-header { text-align: center; border-bottom: 1px solid #A8A090; padding-bottom: 8px; margin-bottom: 12px; }
+.ott-title { font-size: 14px; font-weight: 700; color: #1A1710; margin-bottom: 2px; }
+.ott-sub { font-family: 'Noto Sans KR', sans-serif; font-size: 9px; color: #7A7060; letter-spacing: 2px; }
+.ott-tabs { display: flex; gap: 0; margin-bottom: 10px; overflow-x: auto; }
+.ott-tab { font-family: 'Noto Sans KR', sans-serif; font-size: 10px; padding: 4px 12px; border-right: 0.5px solid #A8A090; color: #7A7060; cursor: pointer; white-space: nowrap; flex-shrink: 0; }
+.ott-tab.on { background: #1A1710; color: #D8D0B8; font-weight: 700; }
+.ott-rank { display: flex; flex-direction: column; gap: 8px; }
+.ott-item { display: flex; gap: 10px; align-items: center; padding-bottom: 8px; border-bottom: 0.5px solid #A8A090; }
+.ott-item:last-child { border-bottom: none; padding-bottom: 0; }
+.ott-num { font-family: 'Noto Sans KR', sans-serif; font-size: 16px; font-weight: 700; color: #8B1A1A; width: 20px; text-align: center; flex-shrink: 0; }
+.ott-img { width: 40px; height: 56px; background: #B8B0A0; border: 0.5px solid #A8A090; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 18px; }
+.ott-info { flex: 1; }
+.ott-name { font-size: 12px; font-weight: 600; color: #1A1710; margin-bottom: 2px; }
+.ott-platform { font-family: 'Noto Sans KR', sans-serif; font-size: 9px; color: #8B1A1A; font-weight: 700; margin-bottom: 2px; }
+.ott-desc { font-family: 'Noto Sans KR', sans-serif; font-size: 10px; color: #7A7060; line-height: 1.5; }
+.ott-badge { font-family: 'Noto Sans KR', sans-serif; font-size: 8px; background: #8B1A1A; color: #D8D0B8; padding: 1px 5px; font-weight: 700; margin-left: 4px; }
+
+/* 2단 레이아웃 (기사+사이드) */
+.two-col-layout { display: grid; grid-template-columns: 1fr 200px; gap: 16px; margin-bottom: 14px; }
+.main-col { }
+.side-col { display: flex; flex-direction: column; gap: 10px; }
+
+/* 하단 네비 */
+.bottom-nav { background: #C8C0A8; border-top: 2px solid #1A1710; display: flex; }
+.bn { flex: 1; padding: 8px 4px 6px; display: flex; flex-direction: column; align-items: center; gap: 2px; cursor: pointer; border-right: 0.5px solid #A8A090; }
+.bn:last-child { border-right: none; }
+.bn.on { background: #1A1710; }
+.bn-icon { font-size: 16px; filter: grayscale(80%); }
+.bn.on .bn-icon { filter: none; }
+.bn-label { font-family: 'Noto Sans KR', sans-serif; font-size: 9px; color: #7A7060; letter-spacing: 0.5px; }
+.bn.on .bn-label { color: #D8D0B8; }
+
+/* 범례 */
+.legend { background: #1A1710; color: #D8D0B8; padding: 12px 20px; font-family: 'Noto Sans KR', sans-serif; font-size: 11px; }
+.legend-title { font-weight: 700; color: #F4A020; margin-bottom: 8px; font-size: 12px; }
+.legend-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+.legend-item { display: flex; align-items: center; gap: 6px; }
+.legend-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+.legend-text { font-size: 10px; color: #B8B0A0; }
+</style>
+</head>
+<body>
+
+<!-- 탭 선택 -->
+<div class="tabs">
+  <button class="tab active" onclick="showPage('home')">1면 (홈)</button>
+  <button class="tab" onclick="showPage('detail')">투표 상세</button>
+  <button class="tab" onclick="showPage('ott')">OTT 편성표</button>
+  <button class="tab" onclick="showPage('layout')">전체 레이아웃 설명</button>
+</div>
+
+<!-- ===== 1면 홈 ===== -->
+<div class="page active" id="page-home">
+<div class="newspaper">
+  <!-- 마스트헤드 -->
+  <div class="masthead">
+    <div class="mh-top">
+      <span>2026년 4월 30일 목요일 · 제 1,247호</span>
+      <span>대한민국 No.1 여론 투표 플랫폼</span>
+    </div>
+    <div class="mh-title">모두의 투표</div>
+    <div class="mh-sub">THE PEOPLE'S VOTE · 국민 여론 투표 신문</div>
+    <div class="mh-rule"></div>
+    <div class="mh-cats">
+      <div class="mh-cat on">오늘자</div>
+      <div class="mh-cat">사회</div>
+      <div class="mh-cat">정치</div>
+      <div class="mh-cat">경제</div>
+      <div class="mh-cat">문화</div>
+      <div class="mh-cat">스포츠</div>
+      <div class="mh-cat">국제</div>
+      <div class="mh-cat">기술</div>
+      <div class="mh-cat">환경</div>
+    </div>
+  </div>
+
+  <!-- 티커 -->
+  <div class="ticker">
+    <span class="ticker-label">속보</span>
+    6월 3일 지방선거 D-34 · 월드컵 6월 11일 개막 · 모두의 투표 지수 실시간 업데이트 중
+  </div>
+
+  <div class="body">
+    <!-- 1면 헤드라인 -->
+    <div class="section-label">— 오늘의 주요 의제 —</div>
+
+    <div class="headline-grid">
+      <!-- 메인 헤드라인 -->
+      <div class="headline-main">
+        <div class="headline-cat">정치 · 지방선거</div>
+        <div class="headline-title">2026 지방선거,<br>당신의 지역 후보 중<br>가장 중요한 공약은?</div>
+        <div class="headline-img">🗳️ 헤드라인 이미지 (흑백)</div>
+        <div class="headline-desc">6월 3일 전국동시지방선거가 한 달 앞으로 다가왔다. 시민들이 가장 중요하게 생각하는 공약은 무엇인지 물었다...</div>
+        <div class="vote-bar-wrap"><div class="vote-bar" style="width:62%"></div></div>
+        <div class="vote-meta"><span>12,847명 참여</span><span>30일 남음</span></div>
+      </div>
+
+      <!-- 사이드 헤드라인들 -->
+      <div class="headline-side">
+        <div class="side-item">
+          <div class="side-cat">경제</div>
+          <div class="side-title">최저임금 1만 5천원, 소상공인에게 과한가</div>
+          <div class="side-meta">6,741명 · 찬성 51%</div>
+        </div>
+        <div class="side-item">
+          <div class="side-cat">사회</div>
+          <div class="side-title">주 4일 근무제, 도입해야 하는가</div>
+          <div class="side-meta">5,621명 · 찬성 58%</div>
+        </div>
+        <div class="side-item">
+          <div class="side-cat">기술</div>
+          <div class="side-title">AI가 내 일자리를 빼앗을 것인가</div>
+          <div class="side-meta">4,892명 · 그렇다 44%</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 2단 레이아웃: 3단 기사 + 사이드 광고/편성표 -->
+    <div class="two-col-layout">
+      <div class="main-col">
+        <!-- 3단 컬럼 -->
+        <div class="three-col">
+          <div class="col">
+            <div class="col-cat">문화</div>
+            <div class="col-title">20대가 가장 사랑하는 브랜드는?</div>
+            <div class="col-text">소비 트렌드로 읽는 2030 세대의 가치관...</div>
+            <div class="col-meta">객관식 · 9,241명</div>
+          </div>
+          <div class="col-div"></div>
+          <div class="col">
+            <div class="col-cat">환경</div>
+            <div class="col-title">일회용컵 보증금제, 불편함을 감수할 가치 있나</div>
+            <div class="col-text">환경 보호를 위한 불편함, 어디까지 감수할 수 있나...</div>
+            <div class="col-meta">찬반 · 5,621명</div>
+          </div>
+          <div class="col-div"></div>
+          <div class="col">
+            <div class="col-cat">스포츠</div>
+            <div class="col-title">2026 월드컵 한국, 몇 강까지?</div>
+            <div class="col-text">6월 11일 개막하는 FIFA 월드컵, 태극전사의 성적은...</div>
+            <div class="col-meta">객관식 · 8,103명</div>
+          </div>
+        </div>
+
+        <!-- 전면 광고 -->
+        <div class="ad-full">
+          <div class="ad-tag">광 고</div>
+          <div class="ad-title">장비콜</div>
+          <div class="ad-text">스카이·크레인·고소작업대<br>전화 없이 5분 견적 완료 · 전국 340개 업체</div>
+          <div class="ad-cta">▶ 지금 바로가기</div>
+        </div>
+
+        <!-- 추가 기사들 -->
+        <div class="section-label">— 기타 의제 —</div>
+        <div class="three-col" style="border-bottom:none;margin-bottom:0;padding-bottom:0;">
+          <div class="col">
+            <div class="col-cat">정치</div>
+            <div class="col-title">선거 연령 16세 하향, 찬성하십니까</div>
+            <div class="col-meta">찬반 · 3,892명</div>
+          </div>
+          <div class="col-div"></div>
+          <div class="col">
+            <div class="col-cat">사회</div>
+            <div class="col-title">반려동물 동반 식당 허용해야 하나</div>
+            <div class="col-meta">찬반 · 4,108명</div>
+          </div>
+          <div class="col-div"></div>
+          <div class="col">
+            <div class="col-cat">국제</div>
+            <div class="col-title">트럼프 관세, 한국 경제에 위협인가</div>
+            <div class="col-meta">찬반 · 7,234명</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 사이드 컬럼: OTT 미니 + 광고 -->
+      <div class="side-col">
+        <!-- OTT 미니 -->
+        <div class="ott-section" style="padding:10px;">
+          <div class="ott-header" style="padding-bottom:6px;margin-bottom:8px;">
+            <div class="ott-title" style="font-size:12px;">OTT 인기 순위</div>
+            <div class="ott-sub">이번 주 TOP 3</div>
+          </div>
+          <div class="ott-rank">
+            <div class="ott-item">
+              <div class="ott-num">1</div>
+              <div class="ott-img">🎬</div>
+              <div class="ott-info">
+                <div class="ott-name" style="font-size:11px;">폭풍의 계절<span class="ott-badge">NEW</span></div>
+                <div class="ott-platform">넷플릭스</div>
+              </div>
+            </div>
+            <div class="ott-item">
+              <div class="ott-num">2</div>
+              <div class="ott-img">🎭</div>
+              <div class="ott-info">
+                <div class="ott-name" style="font-size:11px;">봄날의 기억</div>
+                <div class="ott-platform">티빙</div>
+              </div>
+            </div>
+            <div class="ott-item" style="border-bottom:none;">
+              <div class="ott-num">3</div>
+              <div class="ott-img">🎪</div>
+              <div class="ott-info">
+                <div class="ott-name" style="font-size:11px;">다크 시티</div>
+                <div class="ott-platform">웨이브</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 사이드 광고 1 -->
+        <div class="ad-side">
+          <div class="ad-tag">광 고</div>
+          <div style="font-family:'UnifrakturMaguntia',cursive;font-size:16px;color:#1A1710;margin-bottom:4px;">건설 자재 단가</div>
+          <div style="font-family:'Noto Sans KR',sans-serif;font-size:9px;color:#5A5040;line-height:1.6;">알루미늄시트·EGI<br>실시간 최저가 비교</div>
+        </div>
+
+        <!-- 사이드 광고 2 -->
+        <div class="ad-side">
+          <div class="ad-tag">광 고</div>
+          <div style="font-size:13px;font-weight:700;color:#1A1710;margin-bottom:4px;">모두의 투표</div>
+          <div style="font-family:'Noto Sans KR',sans-serif;font-size:9px;color:#5A5040;line-height:1.6;">여론조사 데이터<br>B2B 제휴 문의</div>
+          <div style="font-family:'Noto Sans KR',sans-serif;font-size:9px;border:0.5px solid #1A1710;padding:2px 8px;display:inline-block;margin-top:4px;cursor:pointer;">문의하기</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 하단 네비 -->
+  <div class="bottom-nav">
+    <div class="bn on"><div class="bn-icon">📰</div><div class="bn-label">오늘자</div></div>
+    <div class="bn"><div class="bn-icon">🔥</div><div class="bn-label">화제</div></div>
+    <div class="bn"><div class="bn-icon">✒️</div><div class="bn-label">투고</div></div>
+    <div class="bn" onclick="showPage('ott')"><div class="bn-icon">📺</div><div class="bn-label">편성표</div></div>
+    <div class="bn"><div class="bn-icon">🗳️</div><div class="bn-label">나의 투표</div></div>
+  </div>
+</div>
+</div>
+
+<!-- ===== OTT 편성표 전체 ===== -->
+<div class="page" id="page-ott">
+<div class="newspaper">
+  <div class="masthead">
+    <div class="mh-top"><span>2026년 4월 30일 목요일</span><span>OTT 편성표</span></div>
+    <div class="mh-title">모두의 투표</div>
+    <div class="mh-sub">THE PEOPLE'S VOTE · OTT 편성표</div>
+    <div class="mh-rule"></div>
+    <div class="mh-cats">
+      <div class="mh-cat" onclick="showPage('home')">← 뉴스로</div>
+      <div class="mh-cat on">전체</div>
+      <div class="mh-cat">넷플릭스</div>
+      <div class="mh-cat">티빙</div>
+      <div class="mh-cat">웨이브</div>
+      <div class="mh-cat">디즈니+</div>
+      <div class="mh-cat">쿠팡플레이</div>
+    </div>
+  </div>
+
+  <div class="body">
+    <div class="two-col-layout">
+      <div class="main-col">
+        <div class="section-label">— 이번 주 인기 순위 —</div>
+        <div class="ott-section">
+          <div class="ott-rank">
+            <div class="ott-item">
+              <div class="ott-num">1</div>
+              <div class="ott-img">🎬</div>
+              <div class="ott-info">
+                <div class="ott-name">폭풍의 계절<span class="ott-badge">NEW</span></div>
+                <div class="ott-platform">넷플릭스 · 스릴러 · 16부작</div>
+                <div class="ott-desc">전직 형사가 연쇄 실종 사건을 추적하는 스릴러</div>
+              </div>
+              <div style="font-family:'Noto Sans KR',sans-serif;font-size:10px;color:#1A6A2A;font-weight:700;">▲ NEW</div>
+            </div>
+            <div class="ott-item">
+              <div class="ott-num">2</div>
+              <div class="ott-img">🎭</div>
+              <div class="ott-info">
+                <div class="ott-name">봄날의 기억</div>
+                <div class="ott-platform">티빙 · 로맨스 · 12부작</div>
+                <div class="ott-desc">10년 만에 재회한 첫사랑 이야기</div>
+              </div>
+              <div style="font-family:'Noto Sans KR',sans-serif;font-size:10px;color:#1A6A2A;font-weight:700;">▲ 3</div>
+            </div>
+            <div class="ott-item">
+              <div class="ott-num">3</div>
+              <div class="ott-img">🎪</div>
+              <div class="ott-info">
+                <div class="ott-name">다크 시티: 리부트</div>
+                <div class="ott-platform">웨이브 · SF · 8부작</div>
+                <div class="ott-desc">2035년 대도시를 배경으로 한 SF 스릴러</div>
+              </div>
+              <div style="font-family:'Noto Sans KR',sans-serif;font-size:10px;color:#8B1A1A;font-weight:700;">▼ 1</div>
+            </div>
+            <div class="ott-item" style="border-bottom:none;">
+              <div class="ott-num">4</div>
+              <div class="ott-img">🎠</div>
+              <div class="ott-info">
+                <div class="ott-name">우리들의 이야기</div>
+                <div class="ott-platform">디즈니+ · 가족 · 10부작</div>
+                <div class="ott-desc">세 자매의 성장 이야기를 담은 따뜻한 드라마</div>
+              </div>
+              <div style="font-family:'Noto Sans KR',sans-serif;font-size:10px;color:#1A6A2A;font-weight:700;">▲ 2</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="section-label">— 이번 주 신작 편성표 —</div>
+        <div class="ott-section">
+          <div style="font-family:'Noto Sans KR',sans-serif;font-size:10px;font-weight:700;color:#5A5040;letter-spacing:2px;margin-bottom:8px;">4월 30일 금요일</div>
+          <div class="ott-rank">
+            <div class="ott-item">
+              <div style="font-family:'Noto Sans KR',sans-serif;font-size:10px;color:#7A7060;width:40px;flex-shrink:0;">오늘<br>공개</div>
+              <div class="ott-img">🎬</div>
+              <div class="ott-info">
+                <div class="ott-name">폭풍의 계절<span class="ott-badge">신작</span></div>
+                <div class="ott-platform">넷플릭스</div>
+                <div class="ott-desc">매주 금요일 2화씩 공개. 총 16부작.</div>
+              </div>
+            </div>
+            <div class="ott-item" style="border-bottom:none;">
+              <div style="font-family:'Noto Sans KR',sans-serif;font-size:10px;color:#7A7060;width:40px;flex-shrink:0;">오늘<br>공개</div>
+              <div class="ott-img">🎭</div>
+              <div class="ott-info">
+                <div class="ott-name">봄날의 기억<span class="ott-badge">신작</span></div>
+                <div class="ott-platform">티빙</div>
+                <div class="ott-desc">매주 금·토 공개. 총 12부작.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="side-col">
+        <div class="ad-side">
+          <div class="ad-tag">광 고</div>
+          <div style="font-size:13px;font-weight:700;color:#1A1710;margin-bottom:4px;">넷플릭스</div>
+          <div class="ott-img" style="width:100%;height:80px;margin-bottom:6px;">🎬</div>
+          <div style="font-family:'Noto Sans KR',sans-serif;font-size:10px;color:#5A5040;">폭풍의 계절<br>지금 바로 시청</div>
+        </div>
+        <div class="ad-side">
+          <div class="ad-tag">광 고</div>
+          <div style="font-size:13px;font-weight:700;color:#1A1710;margin-bottom:4px;">티빙</div>
+          <div class="ott-img" style="width:100%;height:80px;margin-bottom:6px;">🎭</div>
+          <div style="font-family:'Noto Sans KR',sans-serif;font-size:10px;color:#5A5040;">봄날의 기억<br>첫 화 무료 공개</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="bottom-nav">
+    <div class="bn" onclick="showPage('home')"><div class="bn-icon">📰</div><div class="bn-label">오늘자</div></div>
+    <div class="bn"><div class="bn-icon">🔥</div><div class="bn-label">화제</div></div>
+    <div class="bn"><div class="bn-icon">✒️</div><div class="bn-label">투고</div></div>
+    <div class="bn on"><div class="bn-icon">📺</div><div class="bn-label">편성표</div></div>
+    <div class="bn"><div class="bn-icon">🗳️</div><div class="bn-label">나의 투표</div></div>
+  </div>
+</div>
+</div>
+
+<!-- ===== 레이아웃 설명 ===== -->
+<div class="page" id="page-layout">
+<div style="max-width:900px;margin:0 auto;background:#1A1710;color:#D8D0B8;padding:24px;font-family:'Noto Sans KR',sans-serif;">
+  <div style="font-size:18px;font-weight:700;color:#F4A020;margin-bottom:20px;">📐 전체 레이아웃 구조 설명</div>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+    <div style="background:#2A2520;padding:14px;border-radius:8px;">
+      <div style="font-size:13px;font-weight:700;color:#F4A020;margin-bottom:10px;">1면 (홈) 구성</div>
+      <div style="font-size:12px;line-height:2.0;color:#B8B0A0;">
+        ① 마스트헤드 (제호 + 날짜 + 카테고리 탭)<br>
+        ② 뉴스 티커 (실시간 이슈 흐름)<br>
+        ③ 헤드라인 (메인 1개 + 사이드 3개)<br>
+        ④ 2단 레이아웃<br>
+        &nbsp;&nbsp;— 좌: 3단 기사 컬럼<br>
+        &nbsp;&nbsp;— 우: OTT 미니 + 광고<br>
+        ⑤ 전면 광고 (신문 광고 형식)<br>
+        ⑥ 추가 기사 3단 컬럼<br>
+        ⑦ 하단 네비게이션
+      </div>
+    </div>
+    <div style="background:#2A2520;padding:14px;border-radius:8px;">
+      <div style="font-size:13px;font-weight:700;color:#F4A020;margin-bottom:10px;">광고 배치 전략</div>
+      <div style="font-size:12px;line-height:2.0;color:#B8B0A0;">
+        · 전면 광고 — 3단 컬럼 사이에 자연스럽게<br>
+        · 사이드 광고 — 우측 컬럼에 2~3개<br>
+        · OTT 광고 — 편성표 우측 사이드<br>
+        · 티커 광고 — 뉴스 티커에 스폰서 문구<br>
+        · 투표 결과 광고 — 인기 투표 하단<br><br>
+        모두 신문 광고 형식으로 이질감 없이
+      </div>
+    </div>
+    <div style="background:#2A2520;padding:14px;border-radius:8px;">
+      <div style="font-size:13px;font-weight:700;color:#F4A020;margin-bottom:10px;">OTT 편성표 배치</div>
+      <div style="font-size:12px;line-height:2.0;color:#B8B0A0;">
+        · 1면 우측 사이드에 TOP3 미니 버전<br>
+        · 하단 탭 "편성표" 클릭 시 전체 화면<br>
+        · 플랫폼별 탭 (넷플릭스·티빙·웨이브 등)<br>
+        · 인기 순위 + 주간 신작 편성표<br>
+        · OTT 플랫폼 광고 우측 배치
+      </div>
+    </div>
+    <div style="background:#2A2520;padding:14px;border-radius:8px;">
+      <div style="font-size:13px;font-weight:700;color:#F4A020;margin-bottom:10px;">하단 탭 구성</div>
+      <div style="font-size:12px;line-height:2.0;color:#B8B0A0;">
+        📰 오늘자 — 1면 홈<br>
+        🔥 화제 — 실시간 인기 투표<br>
+        ✒️ 투고 — 주제 제안<br>
+        📺 편성표 — OTT 전체 화면<br>
+        🗳️ 나의 투표 — 참여 이력
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+<script>
+function showPage(name) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('page-' + name).classList.add('active');
+  const tabs = ['home', 'detail', 'ott', 'layout'];
+  const idx = tabs.indexOf(name);
+  if (idx >= 0) document.querySelectorAll('.tab')[idx].classList.add('active');
+}
+</script>
+</body>
+</html>

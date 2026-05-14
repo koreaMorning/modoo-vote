@@ -21,7 +21,12 @@
       "Bash(npx next *)",
       "Bash(git push *)",
       "Bash(Get-ChildItem -Path \"C:\\\\Users\\\\user\" -Filter \"ott_schedule*.html\" -Recurse -ErrorAction SilentlyContinue)",
-      "Bash(Select-Object FullName)"
+      "Bash(Select-Object FullName)",
+      "Bash(taskkill *)",
+      "PowerShell(Stop-Process *)",
+      "Bash(git revert *)",
+      "Bash(git checkout *)",
+      "Bash(npx supabase *)"
     ]
   }
 }
