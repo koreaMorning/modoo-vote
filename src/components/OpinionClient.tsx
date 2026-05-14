@@ -53,6 +53,9 @@ export default function OpinionClient({
   const myTempIds = useRef(new Set<string>());
 
   useEffect(() => {
+    // 임시 의견이 있는데 서버가 빈 배열을 반환하면 동기화 건너뜀
+    // (컬럼 누락·네트워크 오류 등으로 SELECT 실패 시 낙관적 상태 보호)
+    if (myTempIds.current.size > 0 && initialOpinions.length === 0) return;
     setOpinions(initialOpinions);
     setMyReactions(initialMyReactions);
     myTempIds.current.clear();
