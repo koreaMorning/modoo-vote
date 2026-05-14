@@ -108,22 +108,41 @@ export default async function HomePage({ searchParams }: Props) {
             <div className="flex flex-col gap-10">
               {orderedCategories.map((cat) => {
                 const catPolls = pollsByCategory[cat];
+                const headline = catPolls[0];
+                const duos = catPolls.slice(1, 3);
+                const mediums = catPolls.slice(3);
                 return (
                   <section key={cat}>
-                    <div className="border-t-4 border-black mb-4">
+                    <div className="border-t-4 border-black mb-0">
                       <span className="text-xs font-bold tracking-widest uppercase bg-black text-white px-2 py-0.5">
                         {cat}
                       </span>
                     </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                      {catPolls.map((poll) => (
-                        <VoteCard
-                          key={poll.id}
-                          poll={poll}
-                          size="medium"
-                          voted={votedPollIds.has(poll.id)}
-                        />
-                      ))}
+                    <div className="border border-t-0 border-[#1c1712]/25">
+                      {/* 헤드라인: 첫 번째 기사 전체 너비 */}
+                      <div className={(duos.length > 0 || mediums.length > 0) ? "border-b border-[#1c1712]/25" : ""}>
+                        <VoteCard poll={headline} size="headline" voted={votedPollIds.has(headline.id)} />
+                      </div>
+                      {/* 2단: 두 번째~세 번째 기사 */}
+                      {duos.length > 0 && (
+                        <div className={`grid gap-0 ${duos.length >= 2 ? "grid-cols-1 sm:grid-cols-2" : "grid-cols-1"}${mediums.length > 0 ? " border-b border-[#1c1712]/25" : ""}`}>
+                          {duos.map((poll, i) => (
+                            <div key={poll.id} className={i > 0 ? "border-t sm:border-t-0 sm:border-l border-[#1c1712]/25" : ""}>
+                              <VoteCard poll={poll} size="duo" voted={votedPollIds.has(poll.id)} />
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                      {/* 3단: 나머지 기사들 */}
+                      {mediums.length > 0 && (
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 border-l border-t border-[#1c1712]/25">
+                          {mediums.map((poll) => (
+                            <div key={poll.id} className="border-r border-b border-[#1c1712]/25">
+                              <VoteCard poll={poll} size="medium" voted={votedPollIds.has(poll.id)} />
+                            </div>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   </section>
                 );
