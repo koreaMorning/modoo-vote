@@ -10,6 +10,18 @@ interface Props {
   searchParams: Promise<{ category?: string }>;
 }
 
+const CATEGORY_ORDER = [
+  "정치",
+  "경제",
+  "주식·테마주",
+  "사회",
+  "문화",
+  "스포츠",
+  "국제",
+  "기술",
+  "환경",
+];
+
 export default async function HomePage({ searchParams }: Props) {
   const { category } = await searchParams;
   const supabase = await createClient();
@@ -54,11 +66,20 @@ export default async function HomePage({ searchParams }: Props) {
     );
   }
 
-  const [featured, ...rest] = polls;
-  const secondary = rest.slice(0, 2);
-  const remaining = rest.slice(2);
-  /* Pick a different poll for the sidebar quick-vote widget */
-  const sidebarPollId = secondary[0]?.id ?? remaining[0]?.id;
+  /* Group polls by category */
+  const pollsByCategory = polls.reduce<Record<string, Poll[]>>((acc, poll) => {
+    if (!acc[poll.category]) acc[poll.category] = [];
+    acc[poll.category].push(poll);
+    return acc;
+  }, {});
+
+  const orderedCategories = [
+    ...CATEGORY_ORDER.filter((c) => pollsByCategory[c]),
+    ...Object.keys(pollsByCategory).filter((c) => !CATEGORY_ORDER.includes(c)),
+  ];
+
+  /* Pick a poll for the sidebar quick-vote widget */
+  const sidebarPollId = polls[1]?.id ?? polls[0]?.id;
 
   return (
     <div className="min-h-screen flex flex-col text-[#1c1712]">
@@ -83,59 +104,29 @@ export default async function HomePage({ searchParams }: Props) {
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-[1fr_280px] gap-6">
             {/* ── Main content ── */}
-            <div>
-              {/* Featured + secondary */}
-              <section className="mb-8">
-                <div className="border-t-4 border-black mb-4">
-                  <span className="text-xs font-bold tracking-widest uppercase bg-black text-white px-2 py-0.5">
-                    주요 투표
-                  </span>
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-0 border-2 border-[#1c1712]">
-                  {/* Big headline */}
-                  <div className="md:col-span-2 border-b-2 md:border-b-0 md:border-r-2 border-[#1c1712]">
-                    {featured && (
-                      <VoteCard
-                        poll={featured}
-                        size="large"
-                        voted={votedPollIds.has(featured.id)}
-                      />
-                    )}
-                  </div>
-                  {/* Secondary list */}
-                  <div className="flex flex-col">
-                    {secondary.map((poll) => (
-                      <VoteCard
-                        key={poll.id}
-                        poll={poll}
-                        size="small"
-                        voted={votedPollIds.has(poll.id)}
-                      />
-                    ))}
-                  </div>
-                </div>
-              </section>
-
-              {/* Remaining polls — 3-column grid */}
-              {remaining.length > 0 && (
-                <section>
-                  <div className="border-t-2 border-black mb-4">
-                    <span className="text-xs font-bold tracking-widest uppercase text-gray-500 py-1 inline-block">
-                      더 많은 투표
-                    </span>
-                  </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {remaining.map((poll) => (
-                      <VoteCard
-                        key={poll.id}
-                        poll={poll}
-                        size="medium"
-                        voted={votedPollIds.has(poll.id)}
-                      />
-                    ))}
-                  </div>
-                </section>
-              )}
+            <div className="flex flex-col gap-10">
+              {orderedCategories.map((cat) => {
+                const catPolls = pollsByCategory[cat];
+                return (
+                  <section key={cat}>
+                    <div className="border-t-4 border-black mb-4">
+                      <span className="text-xs font-bold tracking-widest uppercase bg-black text-white px-2 py-0.5">
+                        {cat}
+                      </span>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {catPolls.map((poll) => (
+                        <VoteCard
+                          key={poll.id}
+                          poll={poll}
+                          size="medium"
+                          voted={votedPollIds.has(poll.id)}
+                        />
+                      ))}
+                    </div>
+                  </section>
+                );
+              })}
             </div>
 
             {/* ── Right sidebar ── */}

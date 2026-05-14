@@ -11,7 +11,7 @@ import {
 } from "./actions";
 import { Category } from "@/types";
 
-const CATEGORIES: Category[] = ["정치", "경제", "사회", "문화", "스포츠", "국제", "기술", "환경"];
+const CATEGORIES: Category[] = ["정치", "경제", "주식·테마주", "사회", "문화", "스포츠", "국제", "기술", "환경"];
 
 const RSS_CATEGORIES = ["정치", "경제", "사회", "문화", "국제", "기술", "스포츠", "환경"];
 

@@ -27,6 +27,7 @@ const categoryColors: Record<string, string> = {
   국제: "bg-[#a0a8c0] text-[#1a1a3a]",
   기술: "bg-[#90b8b8] text-[#0a2828]",
   환경: "bg-[#98b898] text-[#0a2810]",
+  "주식·테마주": "bg-[#c4a8a8] text-[#3a1a1a]",
 };
 
 export default function VoteCard({ poll, size = "medium", voted = false }: Props) {
@@ -41,7 +42,7 @@ export default function VoteCard({ poll, size = "medium", voted = false }: Props
         <article
           className={`p-6 transition-colors ${
             voted
-              ? "bg-[#c0b488] hover:bg-[#b8ac80]"
+              ? "bg-[#d0cbc0] hover:bg-[#c4bfb4]"
               : "bg-[#f5edd5] hover:bg-[#ede0c0]"
           }`}
         >
@@ -86,7 +87,7 @@ export default function VoteCard({ poll, size = "medium", voted = false }: Props
         <article
           className={`p-5 h-full transition-colors ${
             voted
-              ? "bg-[#c0b488] hover:bg-[#b8ac80]"
+              ? "bg-[#d0cbc0] hover:bg-[#c4bfb4]"
               : "bg-[#f5edd5] hover:bg-[#ede0c0]"
           }`}
         >
@@ -123,7 +124,7 @@ export default function VoteCard({ poll, size = "medium", voted = false }: Props
         <article
           className={`border-2 p-6 transition-colors h-full relative ${
             voted
-              ? "bg-[#c0b488] border-[#8c7e60] hover:bg-[#b8ac80]"
+              ? "bg-[#d0cbc0] border-[#b0aaa0] hover:bg-[#c4bfb4]"
               : "bg-[#f5edd5] border-[#1c1712] hover:bg-[#ede0c0]"
           }`}
         >
@@ -165,7 +166,7 @@ export default function VoteCard({ poll, size = "medium", voted = false }: Props
         <article
           className={`border-b py-3 px-2 transition-colors ${
             voted
-              ? "border-[#a09870] bg-[#c4b888] hover:bg-[#bcb080]"
+              ? "border-[#b0aaa0] bg-[#d0cbc0] hover:bg-[#c4bfb4]"
               : "border-[#c8bfa8] hover:bg-[#ede0c0]"
           }`}
         >
@@ -200,7 +201,7 @@ export default function VoteCard({ poll, size = "medium", voted = false }: Props
       <article
         className={`p-4 transition-colors h-full relative ${
           voted
-            ? "bg-[#c4b884] hover:bg-[#bcb07c]"
+            ? "bg-[#d0cbc0] hover:bg-[#c4bfb4]"
             : "bg-[#f5edd5] hover:bg-[#ede0c0]"
         }`}
       >
