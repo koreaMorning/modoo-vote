@@ -21,7 +21,6 @@ const categoryColors: Record<string, string> = {
   국제: "bg-[#a0a8c0] text-[#1a1a3a]",
   기술: "bg-[#90b8b8] text-[#0a2828]",
   환경: "bg-[#98b898] text-[#0a2810]",
-  "주식·테마주": "bg-[#c4a8a8] text-[#3a1a1a]",
 };
 
 export default async function VotePage({ params }: Props) {

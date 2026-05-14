@@ -4,7 +4,6 @@ import { Category } from "@/types";
 const categories: Category[] = [
   "정치",
   "경제",
-  "주식·테마주",
   "사회",
   "문화",
   "스포츠",

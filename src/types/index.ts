@@ -6,8 +6,7 @@ export type Category =
   | "스포츠"
   | "국제"
   | "기술"
-  | "환경"
-  | "주식·테마주";
+  | "환경";
 
 export interface Poll {
   id: string;
