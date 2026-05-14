@@ -4,7 +4,9 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import VoteCard from "@/components/VoteCard";
 import Sidebar from "@/components/Sidebar";
+import Link from "next/link";
 import { Poll } from "@/types";
+import { ROOMS } from "@/lib/rooms";
 
 interface Props {
   searchParams: Promise<{ category?: string }>;
@@ -126,6 +128,35 @@ export default async function HomePage({ searchParams }: Props) {
                   </section>
                 );
               })}
+
+              {/* ── 테마 토론방 섹션 ── */}
+              <section>
+                <div className="border-t-4 border-black mb-4">
+                  <span className="text-xs font-bold tracking-widest uppercase bg-black text-white px-2 py-0.5">
+                    테마 토론방
+                  </span>
+                </div>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-0 border-2 border-[#1c1712] divide-x-2 divide-[#1c1712]">
+                  {ROOMS.map((room) => (
+                    <Link
+                      key={room.slug}
+                      href={`/rooms/${room.slug}`}
+                      className="group block p-4 hover:bg-black/[0.04] transition-colors"
+                    >
+                      <div className="text-2xl mb-2">{room.icon}</div>
+                      <div className="text-sm font-black font-serif group-hover:underline mb-1">
+                        {room.title}
+                      </div>
+                      <div className="text-[10px] text-[#8c8070] leading-snug line-clamp-2">
+                        {room.description}
+                      </div>
+                      <div className="mt-3 text-[10px] font-bold tracking-wide text-[#1c1712] uppercase">
+                        입장하기 →
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              </section>
             </div>
 
             {/* ── Right sidebar ── */}
