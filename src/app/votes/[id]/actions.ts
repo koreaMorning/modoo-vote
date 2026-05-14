@@ -124,3 +124,26 @@ export async function deleteOpinion(
   revalidatePath(`/votes/${pollId}`);
   return { success: true };
 }
+
+export async function reactToOpinion(
+  opinionId: string,
+  reaction: "like" | "dislike",
+  pollId: string
+): Promise<{ success: boolean; newReaction: "like" | "dislike" | null; error?: string }> {
+  const fingerprint = await getOrCreateFingerprint();
+  const supabase = await createClient();
+
+  const { data, error } = await supabase.rpc("toggle_opinion_reaction", {
+    p_opinion_id: opinionId,
+    p_fingerprint: fingerprint,
+    p_reaction: reaction,
+  });
+
+  if (error) {
+    console.error("React to opinion error:", error);
+    return { success: false, newReaction: null, error: "server_error" };
+  }
+
+  revalidatePath(`/votes/${pollId}`);
+  return { success: true, newReaction: (data as { reaction: string | null }).reaction as "like" | "dislike" | null };
+}

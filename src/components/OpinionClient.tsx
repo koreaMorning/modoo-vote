@@ -2,7 +2,12 @@
 
 import { useState, useEffect, useTransition, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { submitOpinion, updateOpinion, deleteOpinion } from "@/app/votes/[id]/actions";
+import {
+  submitOpinion,
+  updateOpinion,
+  deleteOpinion,
+  reactToOpinion,
+} from "@/app/votes/[id]/actions";
 import {
   ThumbsUp,
   ThumbsDown,
@@ -21,10 +26,13 @@ interface OpinionItem {
   stance: "pro" | "con" | "neutral" | null;
   voter_fingerprint: string;
   created_at: string;
+  likes_count: number;
+  dislikes_count: number;
 }
 
 interface Props {
   initialOpinions: OpinionItem[];
+  initialMyReactions: Record<string, "like" | "dislike">;
   currentFingerprint: string | null;
   pollId: string;
   isProscon: boolean;
@@ -34,19 +42,21 @@ type Stance = "pro" | "con" | "neutral" | "";
 
 export default function OpinionClient({
   initialOpinions,
+  initialMyReactions,
   currentFingerprint,
   pollId,
   isProscon,
 }: Props) {
   const router = useRouter();
   const [opinions, setOpinions] = useState(initialOpinions);
+  const [myReactions, setMyReactions] = useState(initialMyReactions);
   const myTempIds = useRef(new Set<string>());
 
-  // 서버 refresh 후 실제 DB 데이터로 동기화
   useEffect(() => {
     setOpinions(initialOpinions);
+    setMyReactions(initialMyReactions);
     myTempIds.current.clear();
-  }, [initialOpinions]);
+  }, [initialOpinions, initialMyReactions]);
 
   // Form
   const [content, setContent] = useState("");
@@ -63,7 +73,6 @@ export default function OpinionClient({
     const trimmed = content.trim();
     const tempId = `__temp__${Date.now()}`;
 
-    // 낙관적 추가
     myTempIds.current.add(tempId);
     setOpinions((prev) => [
       {
@@ -72,6 +81,8 @@ export default function OpinionClient({
         stance: (stance || null) as "pro" | "con" | "neutral" | null,
         voter_fingerprint: currentFingerprint ?? tempId,
         created_at: new Date().toISOString(),
+        likes_count: 0,
+        dislikes_count: 0,
       },
       ...prev,
     ]);
@@ -81,12 +92,63 @@ export default function OpinionClient({
     startSubmitTransition(async () => {
       const result = await submitOpinion(pollId, trimmed, stance || null);
       if (result.success) {
-        router.refresh(); // 서버 재렌더 → useEffect에서 실제 데이터로 교체
+        router.refresh();
       } else {
-        // 롤백
         setOpinions((prev) => prev.filter((o) => o.id !== tempId));
         myTempIds.current.delete(tempId);
         setContent(trimmed);
+      }
+    });
+  }
+
+  function handleReact(opinionId: string, reaction: "like" | "dislike") {
+    const current = myReactions[opinionId] ?? null;
+    const newReaction: "like" | "dislike" | null =
+      current === reaction ? null : reaction;
+
+    const likeDelta =
+      (newReaction === "like" ? 1 : 0) - (current === "like" ? 1 : 0);
+    const dislikeDelta =
+      (newReaction === "dislike" ? 1 : 0) - (current === "dislike" ? 1 : 0);
+
+    setMyReactions((prev) => {
+      const next = { ...prev };
+      if (newReaction === null) delete next[opinionId];
+      else next[opinionId] = newReaction;
+      return next;
+    });
+    setOpinions((prev) =>
+      prev.map((o) =>
+        o.id === opinionId
+          ? {
+              ...o,
+              likes_count: Math.max(0, o.likes_count + likeDelta),
+              dislikes_count: Math.max(0, o.dislikes_count + dislikeDelta),
+            }
+          : o
+      )
+    );
+
+    reactToOpinion(opinionId, reaction, pollId).then((result) => {
+      if (!result.success) {
+        // 롤백
+        setMyReactions((prev) => {
+          const next = { ...prev };
+          if (current === null) delete next[opinionId];
+          else next[opinionId] = current;
+          return next;
+        });
+        setOpinions((prev) =>
+          prev.map((o) =>
+            o.id === opinionId
+              ? {
+                  ...o,
+                  likes_count: Math.max(0, o.likes_count - likeDelta),
+                  dislikes_count: Math.max(0, o.dislikes_count - dislikeDelta),
+                }
+              : o
+          )
+        );
       }
     });
   }
@@ -238,6 +300,7 @@ export default function OpinionClient({
             const own = isOwn(opinion);
             const editing = editId === opinion.id;
             const temp = isTemp(opinion.id);
+            const myReaction = myReactions[opinion.id] ?? null;
 
             return (
               <li
@@ -248,8 +311,9 @@ export default function OpinionClient({
                     : opinion.stance === "con"
                     ? "border-[#882020] bg-[#fdf0ee]"
                     : "border-[#b0a070] bg-[#faf5e8]"
-                } ${temp ? "opacity-70" : ""}`}
+                } ${temp ? "opacity-60" : ""}`}
               >
+                {/* 스탠스 아이콘 */}
                 <span className="mt-0.5 shrink-0">
                   {opinion.stance === "pro" ? (
                     <ThumbsUp size={12} className="text-[#3a8a30]" />
@@ -260,6 +324,7 @@ export default function OpinionClient({
                   )}
                 </span>
 
+                {/* 내용 or 수정 입력 */}
                 {editing ? (
                   <div className="flex-1 flex items-center gap-1.5">
                     <input
@@ -288,15 +353,50 @@ export default function OpinionClient({
                   </span>
                 )}
 
+                {/* 우측: 좋아요·싫어요 + 날짜 + 수정·삭제 */}
                 <div className="flex items-center gap-2 shrink-0 ml-auto">
+                  {!editing && !temp && (
+                    <>
+                      <button
+                        onClick={() => handleReact(opinion.id, "like")}
+                        className={`flex items-center gap-0.5 text-[11px] tabular-nums transition-colors ${
+                          myReaction === "like"
+                            ? "text-[#2a6828] font-bold"
+                            : "text-[#a09070] hover:text-[#2a6828]"
+                        }`}
+                        title="좋아요"
+                      >
+                        <ThumbsUp size={11} />
+                        {opinion.likes_count > 0 && (
+                          <span>{opinion.likes_count}</span>
+                        )}
+                      </button>
+                      <button
+                        onClick={() => handleReact(opinion.id, "dislike")}
+                        className={`flex items-center gap-0.5 text-[11px] tabular-nums transition-colors ${
+                          myReaction === "dislike"
+                            ? "text-[#882020] font-bold"
+                            : "text-[#a09070] hover:text-[#882020]"
+                        }`}
+                        title="싫어요"
+                      >
+                        <ThumbsDown size={11} />
+                        {opinion.dislikes_count > 0 && (
+                          <span>{opinion.dislikes_count}</span>
+                        )}
+                      </button>
+                    </>
+                  )}
+
                   {!editing && (
                     <span className="text-[10px] text-[#a09070] tabular-nums">
-                      {new Date(opinion.created_at).toLocaleDateString(
-                        "ko-KR",
-                        { month: "numeric", day: "numeric" }
-                      )}
+                      {new Date(opinion.created_at).toLocaleDateString("ko-KR", {
+                        month: "numeric",
+                        day: "numeric",
+                      })}
                     </span>
                   )}
+
                   {own && !editing && !temp && (
                     <>
                       <button
