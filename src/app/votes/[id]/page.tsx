@@ -214,7 +214,7 @@ export default async function VotePage({ params }: Props) {
           </div>
 
           {/* ── Opinions ────────────────────────────────────── */}
-          <OpinionSection pollId={poll.id} />
+          <OpinionSection pollId={poll.id} optionCount={options.length} />
         </article>
 
         {/* ── Next poll teaser ─────────────────────────────── */}

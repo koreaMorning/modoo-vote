@@ -132,7 +132,7 @@ function NewsTab() {
       const res = await fetch("/api/admin/convert", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ title: item.title, description: item.description }),
+        body: JSON.stringify({ title: item.title, description: item.description, link: item.link }),
       });
       const data = await res.json();
       if (data.error) throw new Error(data.error);

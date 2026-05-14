@@ -9,7 +9,14 @@ async function getOrCreateFingerprint(): Promise<string> {
   const cookieStore = await cookies();
   const existing = cookieStore.get("voter_id")?.value;
   if (existing) return existing;
-  return uuidv4();
+  const newId = uuidv4();
+  cookieStore.set("voter_id", newId, {
+    maxAge: 60 * 60 * 24 * 365 * 5,
+    httpOnly: true,
+    sameSite: "lax",
+    path: "/",
+  });
+  return newId;
 }
 
 export async function castVote(
@@ -63,6 +70,54 @@ export async function submitOpinion(
 
   if (error) {
     console.error("Opinion error:", error);
+    return { success: false, error: "server_error" };
+  }
+
+  revalidatePath(`/votes/${pollId}`);
+  return { success: true };
+}
+
+export async function updateOpinion(
+  id: string,
+  content: string,
+  pollId: string
+): Promise<{ success: boolean; error?: string }> {
+  const trimmed = content?.trim() ?? "";
+  if (!trimmed || trimmed.length > 100) return { success: false, error: "invalid" };
+
+  const fingerprint = await getOrCreateFingerprint();
+  const supabase = await createClient();
+
+  const { error } = await supabase
+    .from("poll_opinions")
+    .update({ content: trimmed })
+    .eq("id", id)
+    .eq("voter_fingerprint", fingerprint);
+
+  if (error) {
+    console.error("Update opinion error:", error);
+    return { success: false, error: "server_error" };
+  }
+
+  revalidatePath(`/votes/${pollId}`);
+  return { success: true };
+}
+
+export async function deleteOpinion(
+  id: string,
+  pollId: string
+): Promise<{ success: boolean; error?: string }> {
+  const fingerprint = await getOrCreateFingerprint();
+  const supabase = await createClient();
+
+  const { error } = await supabase
+    .from("poll_opinions")
+    .delete()
+    .eq("id", id)
+    .eq("voter_fingerprint", fingerprint);
+
+  if (error) {
+    console.error("Delete opinion error:", error);
     return { success: false, error: "server_error" };
   }
 
