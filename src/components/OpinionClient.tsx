@@ -365,12 +365,7 @@ export default function OpinionClient({
           <div className="space-y-2">
             <div className="flex items-center justify-between mb-1">
               <span className="text-[11px] font-black tracking-widest text-[#6b6356] uppercase">의견 남기기</span>
-              <button
-                onClick={() => setNickname("")}
-                className="text-[10px] text-[#a09070] hover:text-[#1c1712] underline underline-offset-2 transition-colors"
-              >
-                닉네임 변경 ({nickname})
-              </button>
+              <span className="text-[10px] text-[#a09070]">{nickname}</span>
             </div>
 
             {isProscon && (
