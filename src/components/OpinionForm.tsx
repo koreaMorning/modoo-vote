@@ -20,7 +20,7 @@ export default function OpinionForm({ pollId, isProscon }: Props) {
   function handleSubmit() {
     if (!content.trim()) return;
     startTransition(async () => {
-      const result = await submitOpinion(pollId, content, stance || null);
+      const result = await submitOpinion(pollId, content, stance || null, "");
       if (result.success) {
         setContent("");
         setStance("");

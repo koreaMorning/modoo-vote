@@ -14,7 +14,7 @@ export default async function OpinionSection({ pollId, optionCount }: Props) {
 
   const { data } = await supabase
     .from("poll_opinions")
-    .select("id, content, stance, created_at, voter_fingerprint, likes_count, dislikes_count")
+    .select("id, content, stance, created_at, voter_fingerprint, likes_count, dislikes_count, nickname")
     .eq("poll_id", pollId)
     .order("likes_count", { ascending: false })
     .order("created_at", { ascending: false })
@@ -28,6 +28,7 @@ export default async function OpinionSection({ pollId, optionCount }: Props) {
     created_at: string;
     likes_count: number;
     dislikes_count: number;
+    nickname: string;
   }[];
 
   let myReactions: Record<string, "like" | "dislike"> = {};

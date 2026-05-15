@@ -51,7 +51,8 @@ export async function castVote(
 export async function submitOpinion(
   pollId: string,
   content: string,
-  stance: string | null
+  stance: string | null,
+  nickname: string
 ): Promise<{ success: boolean; error?: string }> {
   const trimmed = content?.trim() ?? "";
   if (!trimmed || trimmed.length > 100) {
@@ -66,6 +67,7 @@ export async function submitOpinion(
     content: trimmed,
     stance: stance || null,
     voter_fingerprint: fingerprint,
+    nickname: nickname.trim() || "익명",
   });
 
   if (error) {

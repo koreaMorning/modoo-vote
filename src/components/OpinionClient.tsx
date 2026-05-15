@@ -20,6 +20,15 @@ import {
   X,
 } from "lucide-react";
 
+const NICKNAME_KEY = "modoo-chat-nickname";
+
+function getSavedNickname(): string {
+  try { return localStorage.getItem(NICKNAME_KEY) ?? ""; } catch { return ""; }
+}
+function saveNickname(name: string) {
+  try { localStorage.setItem(NICKNAME_KEY, name); } catch {}
+}
+
 interface OpinionItem {
   id: string;
   content: string;
@@ -28,6 +37,7 @@ interface OpinionItem {
   created_at: string;
   likes_count: number;
   dislikes_count: number;
+  nickname: string;
 }
 
 interface Props {
@@ -52,9 +62,27 @@ export default function OpinionClient({
   const [myReactions, setMyReactions] = useState(initialMyReactions);
   const myTempIds = useRef(new Set<string>());
 
+  // 닉네임
+  const [nickname, setNickname] = useState("");
+  const [nicknameInput, setNicknameInput] = useState("");
+  const [confirming, setConfirming] = useState(false);
+
   useEffect(() => {
-    // 임시 의견이 있는데 서버가 빈 배열을 반환하면 동기화 건너뜀
-    // (컬럼 누락·네트워크 오류 등으로 SELECT 실패 시 낙관적 상태 보호)
+    const saved = getSavedNickname();
+    setNickname(saved);
+    setNicknameInput(saved);
+  }, []);
+
+  function confirmNickname() {
+    const name = nicknameInput.trim();
+    if (!name || confirming) return;
+    setConfirming(true);
+    saveNickname(name);
+    setNickname(name);
+    setConfirming(false);
+  }
+
+  useEffect(() => {
     if (myTempIds.current.size > 0 && initialOpinions.length === 0) return;
     setOpinions(initialOpinions);
     setMyReactions(initialMyReactions);
@@ -72,12 +100,13 @@ export default function OpinionClient({
   const [editPending, startEditTransition] = useTransition();
 
   function handleSubmit() {
-    if (!content.trim()) return;
+    if (!content.trim() || !nickname) return;
     const trimmed = content.trim();
     const tempId = `__temp__${Date.now()}`;
 
     myTempIds.current.add(tempId);
     setOpinions((prev) => [
+      ...prev,
       {
         id: tempId,
         content: trimmed,
@@ -86,14 +115,14 @@ export default function OpinionClient({
         created_at: new Date().toISOString(),
         likes_count: 0,
         dislikes_count: 0,
+        nickname,
       },
-      ...prev,
     ]);
     setContent("");
     setStance("");
 
     startSubmitTransition(async () => {
-      const result = await submitOpinion(pollId, trimmed, stance || null);
+      const result = await submitOpinion(pollId, trimmed, stance || null, nickname);
       if (result.success) {
         router.refresh();
       } else {
@@ -106,13 +135,9 @@ export default function OpinionClient({
 
   function handleReact(opinionId: string, reaction: "like" | "dislike") {
     const current = myReactions[opinionId] ?? null;
-    const newReaction: "like" | "dislike" | null =
-      current === reaction ? null : reaction;
-
-    const likeDelta =
-      (newReaction === "like" ? 1 : 0) - (current === "like" ? 1 : 0);
-    const dislikeDelta =
-      (newReaction === "dislike" ? 1 : 0) - (current === "dislike" ? 1 : 0);
+    const newReaction: "like" | "dislike" | null = current === reaction ? null : reaction;
+    const likeDelta = (newReaction === "like" ? 1 : 0) - (current === "like" ? 1 : 0);
+    const dislikeDelta = (newReaction === "dislike" ? 1 : 0) - (current === "dislike" ? 1 : 0);
 
     setMyReactions((prev) => {
       const next = { ...prev };
@@ -123,18 +148,13 @@ export default function OpinionClient({
     setOpinions((prev) =>
       prev.map((o) =>
         o.id === opinionId
-          ? {
-              ...o,
-              likes_count: Math.max(0, o.likes_count + likeDelta),
-              dislikes_count: Math.max(0, o.dislikes_count + dislikeDelta),
-            }
+          ? { ...o, likes_count: Math.max(0, o.likes_count + likeDelta), dislikes_count: Math.max(0, o.dislikes_count + dislikeDelta) }
           : o
       )
     );
 
     reactToOpinion(opinionId, reaction, pollId).then((result) => {
       if (!result.success) {
-        // 롤백
         setMyReactions((prev) => {
           const next = { ...prev };
           if (current === null) delete next[opinionId];
@@ -144,11 +164,7 @@ export default function OpinionClient({
         setOpinions((prev) =>
           prev.map((o) =>
             o.id === opinionId
-              ? {
-                  ...o,
-                  likes_count: Math.max(0, o.likes_count - likeDelta),
-                  dislikes_count: Math.max(0, o.dislikes_count - dislikeDelta),
-                }
+              ? { ...o, likes_count: Math.max(0, o.likes_count - likeDelta), dislikes_count: Math.max(0, o.dislikes_count - dislikeDelta) }
               : o
           )
         );
@@ -156,26 +172,15 @@ export default function OpinionClient({
     });
   }
 
-  function startEdit(op: OpinionItem) {
-    setEditId(op.id);
-    setEditContent(op.content);
-  }
-
-  function cancelEdit() {
-    setEditId(null);
-    setEditContent("");
-  }
+  function startEdit(op: OpinionItem) { setEditId(op.id); setEditContent(op.content); }
+  function cancelEdit() { setEditId(null); setEditContent(""); }
 
   function handleUpdate(id: string) {
     if (!editContent.trim()) return;
     startEditTransition(async () => {
       const result = await updateOpinion(id, editContent, pollId);
       if (result.success) {
-        setOpinions((prev) =>
-          prev.map((o) =>
-            o.id === id ? { ...o, content: editContent.trim() } : o
-          )
-        );
+        setOpinions((prev) => prev.map((o) => o.id === id ? { ...o, content: editContent.trim() } : o));
         cancelEdit();
       }
     });
@@ -184,26 +189,20 @@ export default function OpinionClient({
   function handleDelete(id: string) {
     startEditTransition(async () => {
       const result = await deleteOpinion(id, pollId);
-      if (result.success) {
-        setOpinions((prev) => prev.filter((o) => o.id !== id));
-      }
+      if (result.success) setOpinions((prev) => prev.filter((o) => o.id !== id));
     });
   }
 
   const proCount = opinions.filter((o) => o.stance === "pro").length;
   const conCount = opinions.filter((o) => o.stance === "con").length;
   const isTemp = (id: string) => id.startsWith("__temp__");
-
   function isOwn(op: OpinionItem) {
-    return (
-      myTempIds.current.has(op.id) ||
-      (!!currentFingerprint && op.voter_fingerprint === currentFingerprint)
-    );
+    return myTempIds.current.has(op.id) || (!!currentFingerprint && op.voter_fingerprint === currentFingerprint);
   }
 
   return (
     <section className="mt-8">
-      {/* Header */}
+      {/* 섹션 헤더 */}
       <div className="border-t-2 border-black pt-5 mb-5">
         <div className="flex items-center justify-between">
           <h2 className="text-xs font-bold uppercase tracking-widest">
@@ -215,90 +214,23 @@ export default function OpinionClient({
           {isProscon && opinions.length > 0 && (
             <div className="flex gap-4 text-xs text-[#6b6356]">
               <span className="flex items-center gap-1">
-                <ThumbsUp size={11} className="text-[#2a6828]" />
-                찬성 {proCount}
+                <ThumbsUp size={11} className="text-[#2a6828]" /> 찬성 {proCount}
               </span>
               <span className="flex items-center gap-1">
-                <ThumbsDown size={11} className="text-[#882020]" />
-                반대 {conCount}
+                <ThumbsDown size={11} className="text-[#882020]" /> 반대 {conCount}
               </span>
             </div>
           )}
         </div>
       </div>
 
-      {/* Form */}
-      <div className="space-y-2">
-        {isProscon && (
-          <div className="flex gap-2">
-            {(
-              [
-                { key: "pro", label: "찬성", Icon: ThumbsUp },
-                { key: "con", label: "반대", Icon: ThumbsDown },
-                { key: "neutral", label: "중립", Icon: MessageCircle },
-              ] as const
-            ).map(({ key, label, Icon }) => (
-              <button
-                key={key}
-                onClick={() => setStance(stance === key ? "" : key)}
-                className={`flex items-center gap-1 text-xs px-3 py-1.5 border font-medium transition-all ${
-                  stance === key
-                    ? key === "pro"
-                      ? "bg-[#2a6828] text-white border-[#2a6828]"
-                      : key === "con"
-                      ? "bg-[#882020] text-white border-[#882020]"
-                      : "bg-[#4a4030] text-white border-[#4a4030]"
-                    : "border-[#c0b090] text-[#5a5040] bg-[#f8f0da] hover:border-[#1c1712]"
-                }`}
-              >
-                <Icon size={11} />
-                {label}
-              </button>
-            ))}
-          </div>
-        )}
-
-        <div className="flex gap-2">
-          <input
-            type="text"
-            maxLength={100}
-            value={content}
-            onChange={(e) => setContent(e.target.value)}
-            onKeyDown={(e) =>
-              e.key === "Enter" && !submitPending && handleSubmit()
-            }
-            placeholder={
-              isProscon
-                ? "한 줄 의견을 남겨 주세요 (최대 100자)"
-                : "자유롭게 의견을 남겨 주세요 (최대 100자)"
-            }
-            className="flex-1 px-3 py-2 text-sm border-2 border-[#c0b090] bg-[#f8f0da] focus:border-[#1c1712] focus:outline-none placeholder:text-[#a09070]"
-          />
-          <button
-            onClick={handleSubmit}
-            disabled={!content.trim() || submitPending}
-            className="px-4 py-2 bg-[#1c1712] text-[#f0e5c0] text-sm font-bold hover:bg-[#2e2519] disabled:bg-[#c8bfa8] disabled:text-[#8c8070] disabled:cursor-not-allowed transition-colors flex items-center gap-1.5 shrink-0"
-          >
-            {submitPending ? (
-              <Loader2 size={14} className="animate-spin" />
-            ) : (
-              <Send size={14} />
-            )}
-            게시
-          </button>
-        </div>
-        <p className="text-[10px] text-[#a09070] text-right">
-          {content.length} / 100
-        </p>
-      </div>
-
-      {/* List */}
+      {/* 의견 목록 */}
       {opinions.length === 0 ? (
-        <p className="mt-5 text-sm text-[#a09070] text-center py-6 border border-dashed border-[#c8bfa0] font-serif">
+        <p className="text-sm text-[#a09070] text-center py-6 border border-dashed border-[#c8bfa0] font-serif">
           첫 번째 의견을 남겨 주세요
         </p>
       ) : (
-        <ul className="mt-5 space-y-1.5">
+        <ul className="space-y-1.5">
           {opinions.map((opinion) => {
             const own = isOwn(opinion);
             const editing = editId === opinion.id;
@@ -327,94 +259,66 @@ export default function OpinionClient({
                   )}
                 </span>
 
-                {/* 내용 or 수정 입력 */}
-                {editing ? (
-                  <div className="flex-1 flex items-center gap-1.5">
-                    <input
-                      value={editContent}
-                      onChange={(e) => setEditContent(e.target.value)}
-                      maxLength={100}
-                      className="flex-1 px-2 py-0.5 text-sm border border-[#c0b090] bg-[#f8f0da] focus:outline-none"
-                    />
-                    <button
-                      onClick={() => handleUpdate(opinion.id)}
-                      disabled={editPending || !editContent.trim()}
-                      className="text-[#2a6828] hover:text-[#1a4818] disabled:opacity-40"
-                    >
-                      <Check size={14} />
-                    </button>
-                    <button
-                      onClick={cancelEdit}
-                      className="text-[#882020] hover:text-[#5a1010]"
-                    >
-                      <X size={14} />
-                    </button>
-                  </div>
-                ) : (
-                  <span className="text-[#2d2520] leading-snug flex-1">
-                    {opinion.content}
-                  </span>
-                )}
+                {/* 내용 */}
+                <div className="flex-1 min-w-0">
+                  {opinion.nickname && (
+                    <span className="text-[10px] font-bold text-[#6b6356] mr-1.5">
+                      {opinion.nickname}
+                    </span>
+                  )}
+                  {editing ? (
+                    <div className="flex items-center gap-1.5 mt-0.5">
+                      <input
+                        value={editContent}
+                        onChange={(e) => setEditContent(e.target.value)}
+                        maxLength={100}
+                        className="flex-1 px-2 py-0.5 text-sm border border-[#c0b090] bg-[#f8f0da] focus:outline-none"
+                      />
+                      <button onClick={() => handleUpdate(opinion.id)} disabled={editPending || !editContent.trim()} className="text-[#2a6828] hover:text-[#1a4818] disabled:opacity-40">
+                        <Check size={14} />
+                      </button>
+                      <button onClick={cancelEdit} className="text-[#882020] hover:text-[#5a1010]">
+                        <X size={14} />
+                      </button>
+                    </div>
+                  ) : (
+                    <span className="text-[#2d2520] leading-snug">{opinion.content}</span>
+                  )}
+                </div>
 
-                {/* 우측: 좋아요·싫어요 + 날짜 + 수정·삭제 */}
+                {/* 우측: 반응 + 날짜 + 수정·삭제 */}
                 <div className="flex items-center gap-2 shrink-0 ml-auto">
                   {!editing && !temp && (
                     <>
                       <button
                         onClick={() => handleReact(opinion.id, "like")}
-                        className={`flex items-center gap-0.5 text-[11px] tabular-nums transition-colors ${
-                          myReaction === "like"
-                            ? "text-[#2a6828] font-bold"
-                            : "text-[#a09070] hover:text-[#2a6828]"
-                        }`}
+                        className={`flex items-center gap-0.5 text-[11px] tabular-nums transition-colors ${myReaction === "like" ? "text-[#2a6828] font-bold" : "text-[#a09070] hover:text-[#2a6828]"}`}
                         title="좋아요"
                       >
                         <ThumbsUp size={11} />
-                        {opinion.likes_count > 0 && (
-                          <span>{opinion.likes_count}</span>
-                        )}
+                        {opinion.likes_count > 0 && <span>{opinion.likes_count}</span>}
                       </button>
                       <button
                         onClick={() => handleReact(opinion.id, "dislike")}
-                        className={`flex items-center gap-0.5 text-[11px] tabular-nums transition-colors ${
-                          myReaction === "dislike"
-                            ? "text-[#882020] font-bold"
-                            : "text-[#a09070] hover:text-[#882020]"
-                        }`}
+                        className={`flex items-center gap-0.5 text-[11px] tabular-nums transition-colors ${myReaction === "dislike" ? "text-[#882020] font-bold" : "text-[#a09070] hover:text-[#882020]"}`}
                         title="싫어요"
                       >
                         <ThumbsDown size={11} />
-                        {opinion.dislikes_count > 0 && (
-                          <span>{opinion.dislikes_count}</span>
-                        )}
+                        {opinion.dislikes_count > 0 && <span>{opinion.dislikes_count}</span>}
                       </button>
                     </>
                   )}
-
                   {!editing && (
                     <span className="text-[10px] text-[#a09070] tabular-nums">
-                      {new Date(opinion.created_at).toLocaleDateString("ko-KR", {
-                        month: "numeric",
-                        day: "numeric",
-                      })}
+                      {new Date(opinion.created_at).toLocaleDateString("ko-KR", { month: "numeric", day: "numeric" })}
                     </span>
                   )}
-
                   {own && !editing && !temp && (
                     <>
-                      <button
-                        onClick={() => startEdit(opinion)}
-                        className="text-[#8c8070] hover:text-[#1c1712] transition-colors"
-                        title="수정"
-                      >
+                      <button onClick={() => startEdit(opinion)} className="text-[#8c8070] hover:text-[#1c1712] transition-colors" title="수정">
                         <Pencil size={11} />
                       </button>
-                      <button
-                        onClick={() => handleDelete(opinion.id)}
-                        disabled={editPending}
-                        className="text-[#8c8070] hover:text-[#882020] transition-colors disabled:opacity-40"
-                        title="삭제"
-                      >
+                      <button onClick={() => handleDelete(opinion.id)} disabled={editPending} className="text-[#8c8070] hover:text-[#882020] transition-colors disabled:opacity-40" title="삭제">
                         <Trash2 size={11} />
                       </button>
                     </>
@@ -425,6 +329,97 @@ export default function OpinionClient({
           })}
         </ul>
       )}
+
+      {/* 의견 작성 폼 */}
+      <div className="mt-5 border-t border-[#d4cfc4] pt-5">
+        {nickname === "" ? (
+          /* Step 1: 닉네임 입력 */
+          <div>
+            <p className="text-[11px] font-black tracking-widest text-[#6b6356] mb-3 uppercase">
+              닉네임을 입력하면 의견을 남길 수 있습니다
+            </p>
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={nicknameInput}
+                onChange={(e) => setNicknameInput(e.target.value)}
+                onKeyDown={(e) => { if (e.key === "Enter") confirmNickname(); }}
+                placeholder="사용할 닉네임 (최대 20자)"
+                maxLength={20}
+                className="flex-1 px-3 py-2 text-sm border-2 border-[#c0b090] bg-[#f8f0da] focus:border-[#1c1712] focus:outline-none placeholder:text-[#a09070]"
+              />
+              <button
+                onClick={confirmNickname}
+                disabled={!nicknameInput.trim() || confirming}
+                className="px-4 py-2 bg-[#1c1712] text-[#f0e5c0] text-sm font-bold hover:bg-[#2e2519] disabled:bg-[#c8bfa8] disabled:text-[#8c8070] disabled:cursor-not-allowed transition-colors shrink-0"
+              >
+                확인
+              </button>
+            </div>
+            <p className="text-[10px] text-[#a09070] mt-1.5">
+              닉네임은 브라우저에 저장되어 다음 방문 시 유지됩니다
+            </p>
+          </div>
+        ) : (
+          /* Step 2: 의견 작성 */
+          <div className="space-y-2">
+            <div className="flex items-center justify-between mb-1">
+              <span className="text-[11px] font-black tracking-widest text-[#6b6356] uppercase">의견 남기기</span>
+              <button
+                onClick={() => setNickname("")}
+                className="text-[10px] text-[#a09070] hover:text-[#1c1712] underline underline-offset-2 transition-colors"
+              >
+                닉네임 변경 ({nickname})
+              </button>
+            </div>
+
+            {isProscon && (
+              <div className="flex gap-2">
+                {([
+                  { key: "pro", label: "찬성", Icon: ThumbsUp },
+                  { key: "con", label: "반대", Icon: ThumbsDown },
+                  { key: "neutral", label: "중립", Icon: MessageCircle },
+                ] as const).map(({ key, label, Icon }) => (
+                  <button
+                    key={key}
+                    onClick={() => setStance(stance === key ? "" : key)}
+                    className={`flex items-center gap-1 text-xs px-3 py-1.5 border font-medium transition-all ${
+                      stance === key
+                        ? key === "pro" ? "bg-[#2a6828] text-white border-[#2a6828]"
+                          : key === "con" ? "bg-[#882020] text-white border-[#882020]"
+                          : "bg-[#4a4030] text-white border-[#4a4030]"
+                        : "border-[#c0b090] text-[#5a5040] bg-[#f8f0da] hover:border-[#1c1712]"
+                    }`}
+                  >
+                    <Icon size={11} /> {label}
+                  </button>
+                ))}
+              </div>
+            )}
+
+            <div className="flex gap-2">
+              <input
+                type="text"
+                maxLength={100}
+                value={content}
+                onChange={(e) => setContent(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && !submitPending && handleSubmit()}
+                placeholder={isProscon ? "한 줄 의견을 남겨 주세요 (최대 100자)" : "자유롭게 의견을 남겨 주세요 (최대 100자)"}
+                className="flex-1 px-3 py-2 text-sm border-2 border-[#c0b090] bg-[#f8f0da] focus:border-[#1c1712] focus:outline-none placeholder:text-[#a09070]"
+              />
+              <button
+                onClick={handleSubmit}
+                disabled={!content.trim() || submitPending}
+                className="px-4 py-2 bg-[#1c1712] text-[#f0e5c0] text-sm font-bold hover:bg-[#2e2519] disabled:bg-[#c8bfa8] disabled:text-[#8c8070] disabled:cursor-not-allowed transition-colors flex items-center gap-1.5 shrink-0"
+              >
+                {submitPending ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />}
+                게시
+              </button>
+            </div>
+            <p className="text-[10px] text-[#a09070] text-right">{content.length} / 100</p>
+          </div>
+        )}
+      </div>
     </section>
   );
 }
