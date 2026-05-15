@@ -846,6 +846,15 @@ function RoomsManagementTab() {
   );
 }
 
+function generateSlug(title: string): string {
+  const ascii = title
+    .toLowerCase()
+    .replace(/\s+/g, "-")
+    .replace(/[^a-z0-9-]/g, "");
+  if (ascii.length > 0) return ascii.slice(0, 50);
+  return `room-${Date.now()}`;
+}
+
 function RoomForm({
   form, onChange, categories, onSave, onCancel, saving, saveLabel,
 }: {
@@ -858,17 +867,36 @@ function RoomForm({
   saveLabel: string;
 }) {
   const [showPost, setShowPost] = useState(!!(form.post_title || form.post_content));
+  const [slugEdited, setSlugEdited] = useState(!!form.slug);
 
   return (
     <div className="space-y-3">
       <div className="grid grid-cols-2 gap-3">
         <div>
           <label className="text-[10px] font-black uppercase tracking-widest text-[#6b6356] block mb-1">제목 *</label>
-          <input value={form.title} onChange={(e) => onChange({ ...form, title: e.target.value })} placeholder="주식" maxLength={50} className="w-full border-2 border-[#c8bfa8] bg-[#f5f0e8] px-3 py-2 text-sm font-bold" />
+          <input
+            value={form.title}
+            onChange={(e) => {
+              const title = e.target.value;
+              onChange({ ...form, title, slug: slugEdited ? form.slug : generateSlug(title) });
+            }}
+            placeholder="주식"
+            maxLength={50}
+            className="w-full border-2 border-[#c8bfa8] bg-[#f5f0e8] px-3 py-2 text-sm font-bold"
+          />
         </div>
         <div>
           <label className="text-[10px] font-black uppercase tracking-widest text-[#6b6356] block mb-1">슬러그 * (URL)</label>
-          <input value={form.slug} onChange={(e) => onChange({ ...form, slug: e.target.value.replace(/[^a-z0-9-]/g, "") })} placeholder="stocks" maxLength={50} className="w-full border-2 border-[#c8bfa8] bg-[#f5f0e8] px-3 py-2 text-sm font-mono" />
+          <input
+            value={form.slug}
+            onChange={(e) => {
+              setSlugEdited(true);
+              onChange({ ...form, slug: e.target.value.replace(/[^a-z0-9-]/g, "") });
+            }}
+            placeholder="stocks"
+            maxLength={50}
+            className="w-full border-2 border-[#c8bfa8] bg-[#f5f0e8] px-3 py-2 text-sm font-mono"
+          />
         </div>
         <div>
           <label className="text-[10px] font-black uppercase tracking-widest text-[#6b6356] block mb-1">아이콘 (이모지)</label>
