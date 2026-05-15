@@ -171,8 +171,9 @@ export default function CalendarClient() {
     setSelected(null);
   }
 
-  const firstDay    = new Date(year, month, 1).getDay();
-  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const firstDay      = new Date(year, month, 1).getDay();
+  const daysInMonth   = new Date(year, month + 1, 0).getDate();
+  const trailingBlanks = (7 - (firstDay + daysInMonth) % 7) % 7;
 
   const isToday = (d: number) =>
     d === today.getDate() && month === today.getMonth() && year === today.getFullYear();
@@ -224,7 +225,7 @@ export default function CalendarClient() {
       <div className="border border-[#d4cfc4]">
 
         {/* 요일 헤더 + 날짜 셀 통합 그리드 */}
-        <div className="grid grid-cols-7 [&>*:nth-child(7n)]:border-r-0">
+        <div className="grid grid-cols-7 [&>*:nth-child(7n)]:border-r-0 [&>*:nth-last-child(-n+7)]:border-b-0">
 
           {/* 요일 헤더 */}
           {DAY_KO.map((d, i) => (
@@ -319,6 +320,14 @@ export default function CalendarClient() {
               </button>
             );
           })}
+          {/* 트레일링 빈 셀 (마지막 행 채우기) */}
+          {Array.from({ length: trailingBlanks }).map((_, i) => (
+            <div
+              key={`t${i}`}
+              className="border-b border-r border-[#d4cfc4] bg-[#f5f0e8]"
+              style={{ height: "68px" }}
+            />
+          ))}
         </div>
 
         {/* ── 선택 날짜 패널 ── */}
