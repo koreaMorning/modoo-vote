@@ -160,12 +160,12 @@ export default function RoomClient({ room }: { room: Room }) {
         {/* 찬반 비율 바 */}
         <div className="pt-2">
           <div className="flex justify-between text-[10px] font-bold mb-1">
-            <span className="text-[#8c4a00]">▲ 찬성 {proCount}건 ({proRatio}%)</span>
-            <span className="text-[#2a3a5a]">▼ 반대 {conCount}건 ({100 - proRatio}%)</span>
+            <span className="text-[#1a5c75]">▲ 찬성 {proCount}건 ({proRatio}%)</span>
+            <span className="text-[#7a3040]">▼ 반대 {conCount}건 ({100 - proRatio}%)</span>
           </div>
-          <div className="h-1.5 bg-[#a0a8c0] overflow-hidden rounded-none">
+          <div className="h-1.5 bg-[#e8b8c4] overflow-hidden rounded-none">
             <div
-              className="h-full bg-[#c4873a] transition-all duration-500"
+              className="h-full bg-[#4d9ab5] transition-all duration-500"
               style={{ width: `${proRatio}%` }}
             />
           </div>
@@ -178,12 +178,12 @@ export default function RoomClient({ room }: { room: Room }) {
         {/* 찬성 컬럼 */}
         <div className="flex-1 flex flex-col min-w-0 border-r border-[#d4cfc4]">
           {/* 컬럼 헤더 */}
-          <div className="bg-[#c4873a] text-white px-3 py-2 text-[11px] font-black tracking-widest shrink-0 flex items-center justify-between">
+          <div className="bg-[#4d9ab5] text-white px-3 py-2 text-[11px] font-black tracking-widest shrink-0 flex items-center justify-between">
             <span>▲ 찬성</span>
             <span className="font-normal opacity-80 text-[9px]">{proCount}건</span>
           </div>
           {/* 메시지 */}
-          <div className="flex-1 overflow-y-auto bg-[#fdf8f2]">
+          <div className="flex-1 overflow-y-auto bg-[#f0f7fb]">
             {loading ? (
               <div className="flex items-center justify-center h-20 text-[10px] text-[#a09080]">로딩중...</div>
             ) : msgs.filter(m => m.stance === 'pro').length === 0 ? (
@@ -199,11 +199,11 @@ export default function RoomClient({ room }: { room: Room }) {
                   return (
                     <div
                       key={msg.id}
-                      className={`px-2.5 py-2 border-b border-[#e8e0d0] last:border-b-0 ${isMine ? 'bg-[#c4873a]/8' : ''}`}
+                      className={`px-2.5 py-2 border-b border-[#c8dce8] last:border-b-0 ${isMine ? 'bg-[#4d9ab5]/8' : ''}`}
                     >
                       <div className="flex items-center gap-1.5 mb-0.5">
                         <span className="text-[9px] text-[#b0a080] leading-none">{time}</span>
-                        {isMine && <span className="text-[8px] text-[#c4873a] font-black leading-none">나</span>}
+                        {isMine && <span className="text-[8px] text-[#1a5c75] font-black leading-none">나</span>}
                       </div>
                       <p className={`text-[12px] font-serif leading-snug ${isMine ? 'text-[#1c1712] font-bold' : 'text-[#2d2520]'}`}>
                         {msg.content}
@@ -220,12 +220,12 @@ export default function RoomClient({ room }: { room: Room }) {
         {/* 반대 컬럼 */}
         <div className="flex-1 flex flex-col min-w-0">
           {/* 컬럼 헤더 */}
-          <div className="bg-[#3a5080] text-white px-3 py-2 text-[11px] font-black tracking-widest shrink-0 flex items-center justify-between">
+          <div className="bg-[#c4788a] text-white px-3 py-2 text-[11px] font-black tracking-widest shrink-0 flex items-center justify-between">
             <span>▼ 반대</span>
             <span className="font-normal opacity-80 text-[9px]">{conCount}건</span>
           </div>
           {/* 메시지 */}
-          <div className="flex-1 overflow-y-auto bg-[#f4f6fb]">
+          <div className="flex-1 overflow-y-auto bg-[#fdf0f3]">
             {loading ? (
               <div className="flex items-center justify-center h-20 text-[10px] text-[#a09080]">로딩중...</div>
             ) : msgs.filter(m => m.stance === 'con').length === 0 ? (
@@ -241,11 +241,11 @@ export default function RoomClient({ room }: { room: Room }) {
                   return (
                     <div
                       key={msg.id}
-                      className={`px-2.5 py-2 border-b border-[#dde2ee] last:border-b-0 ${isMine ? 'bg-[#3a5080]/8' : ''}`}
+                      className={`px-2.5 py-2 border-b border-[#e8c8d0] last:border-b-0 ${isMine ? 'bg-[#c4788a]/8' : ''}`}
                     >
                       <div className="flex items-center gap-1.5 mb-0.5">
                         <span className="text-[9px] text-[#9098b0] leading-none">{time}</span>
-                        {isMine && <span className="text-[8px] text-[#3a5080] font-black leading-none">나</span>}
+                        {isMine && <span className="text-[8px] text-[#c4788a] font-black leading-none">나</span>}
                       </div>
                       <p className={`text-[12px] font-serif leading-snug ${isMine ? 'text-[#1c1712] font-bold' : 'text-[#2d2520]'}`}>
                         {msg.content}
@@ -271,13 +271,13 @@ export default function RoomClient({ room }: { room: Room }) {
           <div className="flex gap-3">
             <button
               onClick={() => chooseStance('pro')}
-              className="flex-1 py-3 bg-[#c4873a] text-white font-black text-sm hover:opacity-90 transition-opacity"
+              className="flex-1 py-3 bg-[#4d9ab5] text-white font-black text-sm hover:opacity-90 transition-opacity"
             >
               ▲ 찬성
             </button>
             <button
               onClick={() => chooseStance('con')}
-              className="flex-1 py-3 bg-[#3a5080] text-white font-black text-sm hover:opacity-90 transition-opacity"
+              className="flex-1 py-3 bg-[#c4788a] text-white font-black text-sm hover:opacity-90 transition-opacity"
             >
               ▼ 반대
             </button>
@@ -294,7 +294,7 @@ export default function RoomClient({ room }: { room: Room }) {
             <button
               onClick={() => setStanceOpen(v => !v)}
               className={`text-[10px] font-black px-2.5 py-1.5 text-white flex items-center gap-1 transition-opacity hover:opacity-85 ${
-                stance === 'pro' ? 'bg-[#c4873a]' : 'bg-[#3a5080]'
+                stance === 'pro' ? 'bg-[#4d9ab5]' : 'bg-[#c4788a]'
               }`}
             >
               {stance === 'pro' ? '▲찬성' : '▼반대'}
@@ -307,8 +307,8 @@ export default function RoomClient({ room }: { room: Room }) {
                   onClick={() => { chooseStance('pro'); setStanceOpen(false); }}
                   className={`flex w-full items-center gap-1.5 px-3 py-2 text-[11px] font-black transition-colors ${
                     stance === 'pro'
-                      ? 'bg-[#c4873a] text-white'
-                      : 'bg-white text-[#8c4a00] hover:bg-[#c4873a]/15'
+                      ? 'bg-[#4d9ab5] text-white'
+                      : 'bg-white text-[#1a5c75] hover:bg-[#4d9ab5]/15'
                   }`}
                 >
                   ▲ 찬성
@@ -319,8 +319,8 @@ export default function RoomClient({ room }: { room: Room }) {
                   onClick={() => { chooseStance('con'); setStanceOpen(false); }}
                   className={`flex w-full items-center gap-1.5 px-3 py-2 text-[11px] font-black transition-colors ${
                     stance === 'con'
-                      ? 'bg-[#3a5080] text-white'
-                      : 'bg-white text-[#2a3a5a] hover:bg-[#3a5080]/15'
+                      ? 'bg-[#c4788a] text-white'
+                      : 'bg-white text-[#7a3040] hover:bg-[#c4788a]/15'
                   }`}
                 >
                   ▼ 반대
