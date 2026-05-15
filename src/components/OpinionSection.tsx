@@ -12,15 +12,31 @@ export default async function OpinionSection({ pollId, optionCount }: Props) {
   const cookieStore = await cookies();
   const currentFingerprint = cookieStore.get("voter_id")?.value ?? null;
 
-  const { data } = await supabase
+  const baseSelect = "id, content, stance, created_at, voter_fingerprint, likes_count, dislikes_count";
+
+  // nickname 컬럼이 없을 수 있으므로 fallback 처리
+  let rawData: Record<string, unknown>[] = [];
+  const { data: withNick, error: nickErr } = await supabase
     .from("poll_opinions")
-    .select("id, content, stance, created_at, voter_fingerprint, likes_count, dislikes_count, nickname")
+    .select(`${baseSelect}, nickname`)
     .eq("poll_id", pollId)
     .order("likes_count", { ascending: false })
     .order("created_at", { ascending: false })
     .limit(30);
+  if (!nickErr) {
+    rawData = (withNick ?? []) as Record<string, unknown>[];
+  } else {
+    const { data: withoutNick } = await supabase
+      .from("poll_opinions")
+      .select(baseSelect)
+      .eq("poll_id", pollId)
+      .order("likes_count", { ascending: false })
+      .order("created_at", { ascending: false })
+      .limit(30);
+    rawData = ((withoutNick ?? []) as Record<string, unknown>[]).map((o) => ({ ...o, nickname: "" }));
+  }
 
-  const opinions = (data ?? []) as {
+  const opinions = rawData as {
     id: string;
     content: string;
     stance: "pro" | "con" | "neutral" | null;

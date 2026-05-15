@@ -62,13 +62,26 @@ export async function submitOpinion(
   const fingerprint = await getOrCreateFingerprint();
   const supabase = await createClient();
 
-  const { error } = await supabase.from("poll_opinions").insert({
+  // nickname 컬럼이 없을 수 있으므로 fallback 처리
+  const nickTrimmed = nickname.trim() || "익명";
+  let { error } = await supabase.from("poll_opinions").insert({
     poll_id: pollId,
     content: trimmed,
     stance: stance || null,
     voter_fingerprint: fingerprint,
-    nickname: nickname.trim() || "익명",
+    nickname: nickTrimmed,
   });
+
+  if (error) {
+    // nickname 컬럼 미존재 시 컬럼 없이 재시도
+    const fallback = await supabase.from("poll_opinions").insert({
+      poll_id: pollId,
+      content: trimmed,
+      stance: stance || null,
+      voter_fingerprint: fingerprint,
+    });
+    error = fallback.error;
+  }
 
   if (error) {
     console.error("Opinion error:", error);
