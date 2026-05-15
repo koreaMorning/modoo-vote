@@ -881,7 +881,7 @@ function RoomForm({
       </div>
       <div>
         <label className="text-[10px] font-black uppercase tracking-widest text-[#6b6356] block mb-1">설명</label>
-        <input value={form.description ?? ""} onChange={(e) => onChange({ ...form, description: e.target.value })} placeholder="방 설명" maxLength={200} className="w-full border-2 border-[#c8bfa8] bg-[#f5f0e8] px-3 py-2 text-sm" />
+        <textarea value={form.description ?? ""} onChange={(e) => onChange({ ...form, description: e.target.value })} placeholder="방 설명" rows={3} maxLength={500} className="w-full border-2 border-[#c8bfa8] bg-[#f5f0e8] px-3 py-2 text-sm leading-relaxed resize-none" />
       </div>
       <div>
         <label className="text-[10px] font-black uppercase tracking-widest text-[#6b6356] block mb-1">카테고리</label>
@@ -898,7 +898,7 @@ function RoomForm({
         {showPost && (
           <div className="mt-3 space-y-2">
             <input value={form.post_title ?? ""} onChange={(e) => onChange({ ...form, post_title: e.target.value })} placeholder="게시글 제목" maxLength={200} className="w-full border-2 border-[#c8bfa8] bg-[#f5f0e8] px-3 py-2 text-sm font-bold" />
-            <textarea value={form.post_content ?? ""} onChange={(e) => onChange({ ...form, post_content: e.target.value })} placeholder="게시글 내용" rows={4} maxLength={2000} className="w-full border-2 border-[#c8bfa8] bg-[#f5f0e8] px-3 py-2 text-sm leading-relaxed resize-none" />
+            <textarea value={form.post_content ?? ""} onChange={(e) => onChange({ ...form, post_content: e.target.value })} placeholder="게시글 내용" rows={8} maxLength={2000} className="w-full border-2 border-[#c8bfa8] bg-[#f5f0e8] px-3 py-2 text-sm leading-relaxed resize-none" />
           </div>
         )}
       </div>

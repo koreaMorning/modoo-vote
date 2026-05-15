@@ -517,7 +517,7 @@ const RoomPostBanner = memo(function RoomPostBanner({
       <div className="px-3 pt-2 pb-1">
         <p className="text-[13px] font-black font-serif leading-snug text-[#1c1712]">{title}</p>
       </div>
-      <div className={`px-3 pb-2 overflow-hidden transition-all duration-300 ${expanded ? '' : 'max-h-[52px]'}`}>
+      <div className={`px-3 pb-2 overflow-hidden transition-all duration-300 ${expanded ? '' : 'max-h-[140px]'}`}>
         <p className="text-[11px] text-[#4a4035] leading-relaxed whitespace-pre-wrap">{content}</p>
       </div>
       <button
