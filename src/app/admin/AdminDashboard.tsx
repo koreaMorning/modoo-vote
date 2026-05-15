@@ -5,6 +5,7 @@ import {
   createPoll,
   updatePoll,
   togglePollActive,
+  toggleBreaking,
   getPolls,
   logoutAdmin,
   getCategoriesWithRooms,
@@ -37,6 +38,7 @@ interface PollRow {
   title: string;
   category: string;
   is_active: boolean;
+  is_breaking: boolean;
   created_at: string;
   ends_at: string | null;
   total_votes: number;
@@ -438,6 +440,17 @@ function PostsTab({ polls, onRefresh }: { polls: PollRow[]; onRefresh: () => Pro
     }
   }
 
+  async function handleBreaking(id: string, current: boolean) {
+    setSaving(id);
+    const result = await toggleBreaking(id, !current);
+    setSaving(null);
+    if (result.success) {
+      await onRefresh();
+    } else {
+      setMsg({ type: "err", text: result.error ?? "실패" });
+    }
+  }
+
   return (
     <div>
       <div className="flex items-center justify-between mb-4">
@@ -550,11 +563,22 @@ function PostsTab({ polls, onRefresh }: { polls: PollRow[]; onRefresh: () => Pro
                     수정
                   </button>
                   <button
+                    onClick={() => handleBreaking(p.id, p.is_breaking)}
+                    disabled={saving === p.id}
+                    className={`text-xs border px-3 py-1 transition-colors disabled:opacity-50 ${
+                      p.is_breaking
+                        ? "border-red-700 bg-red-700 text-white hover:bg-red-800"
+                        : "border-red-300 text-red-500 hover:bg-red-50"
+                    }`}
+                  >
+                    {saving === p.id ? "..." : p.is_breaking ? "속보 해제" : "속보 지정"}
+                  </button>
+                  <button
                     onClick={() => handleToggle(p.id, p.is_active)}
                     disabled={saving === p.id}
                     className={`text-xs border px-3 py-1 transition-colors disabled:opacity-50 ${
                       p.is_active
-                        ? "border-red-400 text-red-600 hover:bg-red-50"
+                        ? "border-gray-400 text-gray-600 hover:bg-gray-50"
                         : "border-green-500 text-green-700 hover:bg-green-50"
                     }`}
                   >

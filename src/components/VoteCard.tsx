@@ -33,6 +33,7 @@ export default function VoteCard({ poll, size = "medium", voted = false }: Props
   const daysLeft = getDaysLeft(poll.ends_at);
   const totalVotes = poll.total_votes ?? 0;
   const catColor = categoryColors[poll.category] ?? "bg-[#d8ccb0] text-[#3d3326]";
+  const isBreaking = poll.is_breaking ?? false;
 
   /* ── 헤드라인 (1면 최상단 전체 너비) ── */
   if (size === "headline") {
@@ -40,6 +41,11 @@ export default function VoteCard({ poll, size = "medium", voted = false }: Props
       <Link href={`/votes/${poll.id}`} className="block group">
         <article className="p-6 transition-colors hover:bg-black/[0.03]">
           <div className="flex items-center gap-2 mb-4">
+            {isBreaking && (
+              <span className="text-[10px] font-black bg-[#c0100a] text-white px-2 py-0.5 tracking-widest">
+                속보
+              </span>
+            )}
             <span className={`text-xs font-bold px-2 py-0.5 ${catColor}`}>
               {poll.category}
             </span>
@@ -79,6 +85,11 @@ export default function VoteCard({ poll, size = "medium", voted = false }: Props
       <Link href={`/votes/${poll.id}`} className="block group h-full">
         <article className="p-5 h-full transition-colors hover:bg-black/[0.03]">
           <div className="flex items-center gap-1.5 mb-3">
+            {isBreaking && (
+              <span className="text-[9px] font-black bg-[#c0100a] text-white px-1.5 py-0.5 tracking-widest">
+                속보
+              </span>
+            )}
             <span className={`text-xs font-bold px-1.5 py-0.5 ${catColor}`}>
               {poll.category}
             </span>
@@ -177,6 +188,11 @@ export default function VoteCard({ poll, size = "medium", voted = false }: Props
           </span>
         )}
         <div className="flex items-center gap-2 mb-2">
+          {isBreaking && (
+            <span className="text-[9px] font-black bg-[#c0100a] text-white px-1 py-0.5 tracking-wider">
+              속보
+            </span>
+          )}
           <span className={`text-xs font-bold px-1.5 py-0.5 ${catColor}`}>
             {poll.category}
           </span>

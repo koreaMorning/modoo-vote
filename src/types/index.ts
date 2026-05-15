@@ -14,6 +14,7 @@ export interface Poll {
   description: string | null;
   category: Category;
   is_active: boolean;
+  is_breaking: boolean;
   ends_at: string | null;
   created_at: string;
   options?: Option[];

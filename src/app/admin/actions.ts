@@ -111,6 +111,14 @@ export async function togglePollActive(id: string, isActive: boolean): Promise<{
   return { success: true };
 }
 
+export async function toggleBreaking(id: string, isBreaking: boolean): Promise<{ success: boolean; error?: string }> {
+  const supabase = await createClient();
+  const { error } = await supabase.from("polls").update({ is_breaking: isBreaking }).eq("id", id);
+  if (error) return { success: false, error: error.message };
+  revalidatePath("/");
+  return { success: true };
+}
+
 /* ─────────────────── 토론방 게시글 ─────────────────── */
 
 export interface RoomPost {
@@ -260,7 +268,7 @@ export async function getPolls() {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("polls")
-    .select("id, title, category, is_active, created_at, ends_at, options(votes_count)")
+    .select("id, title, category, is_active, is_breaking, created_at, ends_at, options(votes_count)")
     .order("created_at", { ascending: false });
 
   if (error) return [];

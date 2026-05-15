@@ -20,6 +20,14 @@ export default function Header() {
     weekday: "long",
   });
 
+  const openDateMs = Date.UTC(2026, 4, 1); // 2026-05-01 UTC
+  const todayMs = Date.UTC(
+    new Date().getUTCFullYear(),
+    new Date().getUTCMonth(),
+    new Date().getUTCDate()
+  );
+  const issueNumber = Math.max(1, Math.floor((todayMs - openDateMs) / 86400000) + 1);
+
   return (
     <header className="border-b-4 border-black">
       <div className="max-w-7xl mx-auto px-4">
@@ -30,7 +38,7 @@ export default function Header() {
           </span>
         </div>
 
-        <div className="py-6 text-center border-b-2 border-black">
+        <div className="py-6 text-center border-b-2 border-black relative">
           <Link href="/" className="inline-block">
             <h1 className="text-6xl font-black tracking-tighter font-serif leading-none select-none">
               모두의 투표
@@ -39,6 +47,9 @@ export default function Header() {
               The People&apos;s Vote · 국민 여론 투표 신문
             </p>
           </Link>
+          <span className="absolute right-0 bottom-2 text-[11px] font-bold tracking-widest text-[#6b6356] border border-[#c8bfa8] px-2 py-0.5">
+            제&nbsp;{issueNumber}호
+          </span>
         </div>
 
         <nav className="flex justify-center gap-0 py-1 flex-wrap">
