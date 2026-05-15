@@ -63,14 +63,16 @@ export default function RoomClient({ room }: { room: Room }) {
   const [fp, setFp]                 = useState('');
   const [nickname, setNickname]     = useState('');
   const [nicknameInput, setNicknameInput] = useState('');
-  const [loading, setLoading]       = useState(true);
-  const [sending, setSending]       = useState(false);
-  const [confirming, setConfirming] = useState(false);
-  const [stanceOpen, setStanceOpen] = useState(false);
-  const proBottomRef            = useRef<HTMLDivElement>(null);
-  const conBottomRef            = useRef<HTMLDivElement>(null);
-  const stanceMenuRef           = useRef<HTMLDivElement>(null);
-  const supabase                = createClient();
+  const [loading, setLoading]           = useState(true);
+  const [sending, setSending]           = useState(false);
+  const [confirming, setConfirming]     = useState(false);
+  const [stanceOpen, setStanceOpen]     = useState(false);
+  const [presenceUsers, setPresenceUsers] = useState<{ nickname: string }[]>([]);
+  const proBottomRef  = useRef<HTMLDivElement>(null);
+  const conBottomRef  = useRef<HTMLDivElement>(null);
+  const stanceMenuRef = useRef<HTMLDivElement>(null);
+  const channelRef    = useRef<ReturnType<typeof supabase.channel> | null>(null);
+  const supabase      = createClient();
 
   // 드롭업 외부 클릭 시 닫기
   useEffect(() => {
@@ -137,10 +139,23 @@ export default function RoomClient({ room }: { room: Room }) {
       });
   }, [room.slug]);
 
-  // Realtime 구독
+  // Realtime 채널 (presence + postgres_changes 통합)
+  // fp가 준비된 뒤에 채널을 열어야 presence key로 fp 사용 가능
   useEffect(() => {
-    const channel = supabase
-      .channel(`room-${room.slug}`)
+    if (!fp) return;
+
+    const ch = supabase
+      .channel(`room-${room.slug}`, {
+        config: { presence: { key: fp } },
+      })
+      .on('presence', { event: 'sync' }, () => {
+        const state = ch.presenceState<{ nickname: string }>();
+        // key 당 첫 번째 presence만 사용 (같은 fp의 여러 탭 → 1명으로 집계)
+        const users = Object.values(state)
+          .map((presences) => ({ nickname: (presences[0] as { nickname: string }).nickname }))
+          .filter((u) => !!u.nickname);
+        setPresenceUsers(users);
+      })
       .on(
         'postgres_changes',
         {
@@ -153,10 +168,25 @@ export default function RoomClient({ room }: { room: Room }) {
           setMsgs((prev) => [...prev, payload.new as ChatMsg]);
         }
       )
-      .subscribe();
+      .subscribe(async (status) => {
+        // 구독 완료 시점에 이미 닉네임이 있으면 즉시 track
+        if (status === 'SUBSCRIBED' && nickname) {
+          await ch.track({ nickname });
+        }
+      });
 
-    return () => { supabase.removeChannel(channel); };
-  }, [room.slug]);
+    channelRef.current = ch;
+    return () => {
+      supabase.removeChannel(ch);
+      channelRef.current = null;
+    };
+  }, [room.slug, fp]); // fp 준비 후 한 번만 실행
+
+  // 닉네임 확정 후 presence 등록 (닉네임 변경 시에도 재등록)
+  useEffect(() => {
+    if (!fp || !nickname || !channelRef.current) return;
+    channelRef.current.track({ nickname });
+  }, [fp, nickname]);
 
   // 새 메시지마다 각 컬럼 맨 아래로 스크롤
   useEffect(() => {
@@ -225,6 +255,25 @@ export default function RoomClient({ room }: { room: Room }) {
           updatedAt={room.post_updated_at ?? room.created_at}
         />
       )}
+
+      {/* ── 접속자 현황 ── */}
+      <div className="border-x border-b border-[#d4cfc4] bg-[#f5f0e8] px-3 py-1.5 shrink-0 flex items-center gap-2.5 overflow-hidden">
+        <span className="text-[9px] font-black text-[#8c8070] shrink-0 whitespace-nowrap">
+          👥 {presenceUsers.length}명 접속 중
+        </span>
+        {presenceUsers.length > 0 && (
+          <div className="flex items-center gap-1 overflow-x-auto min-w-0 flex-1">
+            {presenceUsers.map((user, i) => (
+              <span
+                key={i}
+                className="text-[9px] bg-white border border-[#d4cfc4] px-1.5 py-0.5 shrink-0 text-[#4a4035] leading-none"
+              >
+                {user.nickname}
+              </span>
+            ))}
+          </div>
+        )}
+      </div>
 
       {/* ── 좌우 분할 채팅 ── */}
       <div className="flex-1 flex border border-[#d4cfc4] overflow-hidden min-h-0">
