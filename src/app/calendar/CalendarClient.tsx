@@ -177,8 +177,7 @@ export default function CalendarClient() {
   const isToday = (d: number) =>
     d === today.getDate() && month === today.getMonth() && year === today.getFullYear();
 
-  function dayColor(dow: number, dateKey: string, selected: boolean) {
-    if (selected) return "text-[#F0EDE6]";
+  function dayColor(dow: number, dateKey: string) {
     if (holidayMap.has(dateKey) || dow === 0) return "text-[#9b1a1a]";
     if (dow === 6) return "text-[#1a1a8b]";
     return "text-[#1c1712]";
@@ -193,27 +192,27 @@ export default function CalendarClient() {
   return (
     <main className="flex-1 px-0 sm:px-4 py-0 max-w-3xl mx-auto w-full">
 
-      {/* ── 달력 헤더 (레트로) ── */}
-      <div className="border-b-4 border-[#1c1712] bg-[#c0392b] text-white">
-        <div className="flex items-center justify-between px-3 py-1.5">
-          <button onClick={prevMonth} className="px-3 py-1 hover:bg-white/15 transition-colors text-lg font-black">◀</button>
+      {/* ── 달력 헤더 ── */}
+      <div className="border-b border-[#d4cfc4] text-[#1c1712]">
+        <div className="flex items-center justify-between px-3 py-2">
+          <button onClick={prevMonth} className="px-3 py-1 hover:bg-[#1c1712]/6 rounded transition-colors text-base font-black">◀</button>
           <div className="text-center">
             <div className="text-3xl font-black tracking-widest" style={{ fontFamily: "var(--font-serif)" }}>
               {MONTH_NAMES[month]}
             </div>
-            <div className="text-sm tracking-[0.3em] font-bold opacity-90">{year}</div>
+            <div className="text-xs tracking-[0.3em] font-bold text-[#8c8070]">{year}</div>
           </div>
-          <button onClick={nextMonth} className="px-3 py-1 hover:bg-white/15 transition-colors text-lg font-black">▶</button>
+          <button onClick={nextMonth} className="px-3 py-1 hover:bg-[#1c1712]/6 rounded transition-colors text-base font-black">▶</button>
         </div>
         {/* D-Day 목록 미니 배너 */}
         {ddayOnMonth.length > 0 && (
-          <div className="bg-[#8b0000]/60 px-3 py-1 flex gap-3 overflow-x-auto text-xs font-bold tracking-wide">
+          <div className="border-t border-[#d4cfc4] px-3 py-1 flex gap-3 overflow-x-auto text-xs font-bold tracking-wide text-[#006644]">
             {ddayOnMonth.map(d => {
               const n = calcDday(d.key);
               return (
                 <span key={d.key} className="shrink-0 flex items-center gap-1">
                   <Flag size={10} />
-                  {d.label} <span className="opacity-80">{formatDday(n)}</span>
+                  {d.label} <span className="opacity-70">{formatDday(n)}</span>
                 </span>
               );
             })}
@@ -222,11 +221,11 @@ export default function CalendarClient() {
       </div>
 
       {/* ── 요일 헤더 ── */}
-      <div className="grid grid-cols-7 bg-[#f5e6c8] border-b-2 border-[#1c1712]">
+      <div className="grid grid-cols-7 bg-[#f5f0e8] border-b border-[#d4cfc4]">
         {DAY_KO.map((d, i) => (
           <div
             key={d}
-            className={`text-center text-[11px] font-black py-1 border-r-2 border-[#1c1712] last:border-r-0 tracking-widest ${
+            className={`text-center text-[11px] font-black py-1 border-r border-[#d4cfc4] last:border-r-0 tracking-widest ${
               i === 0 ? "text-[#9b1a1a]" : i === 6 ? "text-[#1a1a8b]" : "text-[#1c1712]"
             }`}
             style={{ fontFamily: "var(--font-serif)" }}
@@ -238,13 +237,13 @@ export default function CalendarClient() {
 
       {/* ── 날짜 셀 ── */}
       <div
-        className="grid grid-cols-7 border-l-2 border-[#1c1712] bg-[#fdf8f0]"
-        style={{ borderBottom: "2px solid #1c1712" }}
+        className="grid grid-cols-7 border-l border-[#d4cfc4] bg-[#fdf8f0]"
+        style={{ borderBottom: "1px solid #d4cfc4" }}
       >
         {Array.from({ length: firstDay }).map((_, i) => (
           <div
             key={`b${i}`}
-            className="border-r-2 border-b-2 border-[#1c1712] bg-[#f0ebe0]"
+            className="border-r border-b border-[#d4cfc4] bg-[#f5f0e8]"
             style={{ height: "68px" }}
           />
         ))}
@@ -264,25 +263,25 @@ export default function CalendarClient() {
             <button
               key={day}
               onClick={() => setSelected(sel ? null : day)}
-              className={`border-r-2 border-b-2 border-[#1c1712] p-0.5 relative flex flex-col items-start transition-colors text-left overflow-hidden ${
+              className={`border-r border-b border-[#d4cfc4] p-0.5 relative flex flex-col items-start transition-colors text-left overflow-hidden ${
                 sel
-                  ? "bg-[#1c1712]"
+                  ? "bg-[#1c1712]/10"
                   : todayCell
                   ? "bg-[#fff8dc]"
-                  : "hover:bg-[#f5ede0]"
+                  : "hover:bg-[#1c1712]/4"
               }`}
               style={{ height: "68px" }}
             >
               {/* 날짜 숫자 + 음력 */}
               <div className="flex items-baseline gap-0.5 px-0.5">
                 <span
-                  className={`text-sm font-black leading-none ${dayColor(dow, dateKey, sel)} ${todayCell && !sel ? "underline underline-offset-2 decoration-2" : ""}`}
+                  className={`text-sm font-black leading-none ${dayColor(dow, dateKey)} ${todayCell ? "underline underline-offset-2 decoration-2" : ""}`}
                   style={{ fontFamily: "var(--font-serif)" }}
                 >
                   {day}
                 </span>
                 {lunar && (
-                  <span className={`text-[8px] leading-none ${sel ? "text-[#F0EDE6]/60" : "text-[#8c7a60]"}`}>
+                  <span className="text-[8px] leading-none text-[#8c7a60]">
                     {lunar.intercalation ? "윤" : ""}{lunar.month}/{lunar.day}
                   </span>
                 )}
@@ -290,14 +289,14 @@ export default function CalendarClient() {
 
               {/* 공휴일 이름 */}
               {holiday && (
-                <span className={`text-[7px] font-bold leading-none px-0.5 truncate w-full ${sel ? "text-[#ffaaaa]" : "text-[#9b1a1a]"}`}>
+                <span className="text-[7px] font-bold leading-none px-0.5 truncate w-full text-[#9b1a1a]">
                   {holiday}
                 </span>
               )}
 
               {/* D-Day */}
               {ddayItem && (
-                <span className={`text-[7px] font-black leading-none px-0.5 truncate w-full ${sel ? "text-[#aaffdd]" : "text-[#006644]"}`}>
+                <span className="text-[7px] font-black leading-none px-0.5 truncate w-full text-[#006644]">
                   {formatDday(calcDday(dateKey))}
                 </span>
               )}
@@ -305,7 +304,7 @@ export default function CalendarClient() {
               {/* 메모 미리보기 */}
               {hasMemo && (
                 <span
-                  className={`text-[7px] leading-tight px-0.5 w-full overflow-hidden mt-auto ${sel ? "text-[#F0EDE6]/70" : "text-[#5a5040]"}`}
+                  className="text-[7px] leading-tight px-0.5 w-full overflow-hidden mt-auto text-[#5a5040]"
                   style={{
                     display: "-webkit-box",
                     WebkitLineClamp: 2,
@@ -329,20 +328,20 @@ export default function CalendarClient() {
         const existingDday = ddays.find(d => d.key === dateKey);
         const ddayN = existingDday ? calcDday(dateKey) : null;
         return (
-          <div className="border-2 border-t-0 border-[#1c1712] bg-[#fdf8f0]">
+          <div className="border border-t-0 border-[#d4cfc4] bg-[#fdf8f0]">
             {/* 패널 헤더 */}
-            <div className="flex items-center justify-between px-3 py-2 bg-[#1c1712] text-[#F0EDE6]">
-              <span className="text-sm font-black" style={{ fontFamily: "var(--font-serif)" }}>
+            <div className="flex items-center justify-between px-3 py-2 border-b border-[#d4cfc4]">
+              <span className="text-sm font-black text-[#1c1712]" style={{ fontFamily: "var(--font-serif)" }}>
                 {year}.{String(month + 1).padStart(2,"0")}.{String(selected).padStart(2,"0")}
-                <span className={`ml-1 text-xs font-bold ${dow === 0 ? "text-[#f08080]" : dow === 6 ? "text-[#9090f0]" : "text-white/70"}`}>
+                <span className={`ml-1 text-xs font-bold ${dow === 0 ? "text-[#9b1a1a]" : dow === 6 ? "text-[#1a1a8b]" : "text-[#8c8070]"}`}>
                   ({DAY_KO[dow]})
                 </span>
-                {holiday && <span className="ml-2 text-[10px] text-[#ffaaaa]">{holiday}</span>}
+                {holiday && <span className="ml-2 text-[10px] text-[#9b1a1a] font-bold">{holiday}</span>}
                 {ddayN !== null && (
-                  <span className="ml-2 text-[10px] text-[#aaffdd] font-black">{formatDday(ddayN)}</span>
+                  <span className="ml-2 text-[10px] text-[#006644] font-black">{formatDday(ddayN)}</span>
                 )}
               </span>
-              <button onClick={() => setSelected(null)} className="opacity-50 hover:opacity-100 transition-opacity">
+              <button onClick={() => setSelected(null)} className="text-[#8c8070] hover:text-[#1c1712] transition-colors">
                 <X size={14} />
               </button>
             </div>
@@ -441,8 +440,8 @@ export default function CalendarClient() {
 
       {/* ── D-Day 전체 목록 ── */}
       {ddays.length > 0 && (
-        <div className="mt-4 border-2 border-[#1c1712]">
-          <div className="bg-[#1c1712] text-[#F0EDE6] px-3 py-2 flex items-center gap-2">
+        <div className="mt-4 border border-[#d4cfc4]">
+          <div className="border-b border-[#d4cfc4] px-3 py-2 flex items-center gap-2 text-[#1c1712]">
             <Flag size={12} />
             <span className="text-xs font-black tracking-widest">D-DAY 목록</span>
           </div>
