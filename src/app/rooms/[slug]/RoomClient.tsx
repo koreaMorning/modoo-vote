@@ -6,7 +6,8 @@ import { ArrowLeft, Send, Users } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { Room } from '@/lib/rooms';
 
-const CHAT_FP_KEY = 'modoo-chat-fp';
+const CHAT_FP_KEY    = 'modoo-chat-fp';
+const stanceKey = (slug: string) => `modoo-room-stance-${slug}`;
 
 function getFingerprint(): string {
   try {
@@ -21,6 +22,19 @@ function getFingerprint(): string {
   }
 }
 
+function getSavedStance(slug: string): 'pro' | 'con' | null {
+  try {
+    const v = localStorage.getItem(stanceKey(slug));
+    return v === 'pro' || v === 'con' ? v : null;
+  } catch {
+    return null;
+  }
+}
+
+function saveStance(slug: string, s: 'pro' | 'con') {
+  try { localStorage.setItem(stanceKey(slug), s); } catch {}
+}
+
 interface ChatMsg {
   id: string;
   room_slug: string;
@@ -33,14 +47,22 @@ interface ChatMsg {
 export default function RoomClient({ room }: { room: Room }) {
   const [msgs, setMsgs]       = useState<ChatMsg[]>([]);
   const [text, setText]       = useState('');
-  const [stance, setStance]   = useState<'pro' | 'con'>('pro');
+  const [stance, setStance]   = useState<'pro' | 'con' | null>(null);
   const [fp, setFp]           = useState('');
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const bottomRef             = useRef<HTMLDivElement>(null);
   const supabase              = createClient();
 
-  useEffect(() => { setFp(getFingerprint()); }, []);
+  useEffect(() => {
+    setFp(getFingerprint());
+    setStance(getSavedStance(room.slug));
+  }, [room.slug]);
+
+  function chooseStance(s: 'pro' | 'con') {
+    saveStance(room.slug, s);
+    setStance(s);
+  }
 
   // 초기 메시지 로드
   useEffect(() => {
@@ -84,7 +106,7 @@ export default function RoomClient({ room }: { room: Room }) {
 
   const handleSubmit = useCallback(async () => {
     const content = text.trim();
-    if (!content || !fp || sending) return;
+    if (!content || !fp || !stance || sending) return;
     setSending(true);
     setText('');
     await supabase.from('chat_messages').insert({
@@ -203,53 +225,65 @@ export default function RoomClient({ room }: { room: Room }) {
         )}
       </div>
 
-      {/* ── 입력창 ── */}
-      <div className="border border-t-0 border-[#1c1712] bg-[#fdf8f0] flex items-center gap-2 px-3 py-2 shrink-0">
-        {/* 찬반 토글 */}
-        <div className="flex shrink-0 border border-[#1c1712] overflow-hidden">
-          <button
-            onClick={() => setStance('pro')}
-            className={`px-2.5 py-2 text-[10px] font-black transition-colors ${
-              stance === 'pro'
-                ? 'bg-[#c4873a] text-white'
-                : 'text-[#8c4a00] hover:bg-[#c4873a]/10'
+      {/* ── 진영 선택 or 입력창 ── */}
+      {stance === null ? (
+        /* 진영 미선택: 선택 화면 */
+        <div className="border border-t-0 border-[#1c1712] bg-[#fdf8f0] px-4 py-4 shrink-0">
+          <p className="text-[11px] font-black tracking-widest text-center text-[#6b6356] mb-3 uppercase">
+            먼저 진영을 선택하세요
+          </p>
+          <div className="flex gap-3">
+            <button
+              onClick={() => chooseStance('pro')}
+              className="flex-1 py-3 bg-[#c4873a] text-white font-black text-sm hover:opacity-90 transition-opacity"
+            >
+              ▲ 찬성
+            </button>
+            <button
+              onClick={() => chooseStance('con')}
+              className="flex-1 py-3 bg-[#3a5080] text-white font-black text-sm hover:opacity-90 transition-opacity"
+            >
+              ▼ 반대
+            </button>
+          </div>
+          <p className="text-[9px] text-[#a09080] text-center mt-2">
+            선택 후 변경할 수 없습니다
+          </p>
+        </div>
+      ) : (
+        /* 진영 선택 완료: 입력창 */
+        <div className="border border-t-0 border-[#1c1712] bg-[#fdf8f0] flex items-center gap-2 px-3 py-2 shrink-0">
+          {/* 고정된 진영 배지 */}
+          <span
+            className={`shrink-0 text-[10px] font-black px-2 py-1.5 text-white ${
+              stance === 'pro' ? 'bg-[#c4873a]' : 'bg-[#3a5080]'
             }`}
           >
-            ▲찬
-          </button>
+            {stance === 'pro' ? '▲찬성' : '▼반대'}
+          </span>
+
+          {/* 텍스트 입력 */}
+          <input
+            type="text"
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+            onKeyDown={(e) => { if (e.key === 'Enter') handleSubmit(); }}
+            placeholder="의견을 입력하세요... (Enter로 전송)"
+            maxLength={300}
+            className="flex-1 bg-transparent text-sm font-serif focus:outline-none border-b border-[#c8bfa8] py-1 focus:border-[#1c1712] transition-colors placeholder:text-[#b0a898]"
+          />
+
+          {/* 전송 버튼 */}
           <button
-            onClick={() => setStance('con')}
-            className={`px-2.5 py-2 text-[10px] font-black border-l border-[#1c1712] transition-colors ${
-              stance === 'con'
-                ? 'bg-[#3a5080] text-white'
-                : 'text-[#2a3a5a] hover:bg-[#3a5080]/10'
-            }`}
+            onClick={handleSubmit}
+            disabled={!text.trim() || sending}
+            className="flex items-center gap-1 px-3 py-2 bg-[#1c1712] text-[#fdf8f0] text-xs font-black hover:opacity-80 disabled:opacity-35 shrink-0 transition-opacity"
           >
-            ▼반
+            <Send size={11} />
+            전송
           </button>
         </div>
-
-        {/* 텍스트 입력 */}
-        <input
-          type="text"
-          value={text}
-          onChange={(e) => setText(e.target.value)}
-          onKeyDown={(e) => { if (e.key === 'Enter') handleSubmit(); }}
-          placeholder="의견을 입력하세요... (Enter로 전송)"
-          maxLength={300}
-          className="flex-1 bg-transparent text-sm font-serif focus:outline-none border-b border-[#c8bfa8] py-1 focus:border-[#1c1712] transition-colors placeholder:text-[#b0a898]"
-        />
-
-        {/* 전송 버튼 */}
-        <button
-          onClick={handleSubmit}
-          disabled={!text.trim() || sending}
-          className="flex items-center gap-1 px-3 py-2 bg-[#1c1712] text-[#fdf8f0] text-xs font-black hover:opacity-80 disabled:opacity-35 shrink-0 transition-opacity"
-        >
-          <Send size={11} />
-          전송
-        </button>
-      </div>
+      )}
     </div>
   );
 }
