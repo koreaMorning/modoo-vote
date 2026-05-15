@@ -220,115 +220,116 @@ export default function CalendarClient() {
         )}
       </div>
 
-      {/* ── 요일 헤더 ── */}
-      <div className="grid grid-cols-7 bg-[#f5f0e8] border-b border-[#d4cfc4]">
-        {DAY_KO.map((d, i) => (
-          <div
-            key={d}
-            className={`text-center text-[11px] font-black py-1 border-r border-[#d4cfc4] last:border-r-0 tracking-widest ${
-              i === 0 ? "text-[#9b1a1a]" : i === 6 ? "text-[#1a1a8b]" : "text-[#1c1712]"
-            }`}
-            style={{ fontFamily: "var(--font-serif)" }}
-          >
-            {d}
-          </div>
-        ))}
-      </div>
+      {/* ── 달력 그리드 + 선택 패널 (하나의 컨테이너) ── */}
+      <div className="border border-[#d4cfc4]">
 
-      {/* ── 날짜 셀 ── */}
-      <div
-        className="grid grid-cols-7 border-l border-[#d4cfc4] bg-[#fdf8f0]"
-        style={{ borderBottom: "1px solid #d4cfc4" }}
-      >
-        {Array.from({ length: firstDay }).map((_, i) => (
-          <div
-            key={`b${i}`}
-            className="border-r border-b border-[#d4cfc4] bg-[#f5f0e8]"
-            style={{ height: "68px" }}
-          />
-        ))}
+        {/* 요일 헤더 + 날짜 셀 통합 그리드 */}
+        <div className="grid grid-cols-7 [&>*:nth-child(7n)]:border-r-0">
 
-        {Array.from({ length: daysInMonth }, (_, i) => i + 1).map((day) => {
-          const dow     = (firstDay + day - 1) % 7;
-          const dateKey = toKey(year, month, day);
-          const memoText = memos[dateKey];
-          const hasMemo = !!memoText;
-          const todayCell = isToday(day);
-          const sel = selected === day;
-          const holiday = holidayMap.get(dateKey);
-          const ddayItem = ddays.find(d => d.key === dateKey);
-          const lunar = solarToLunar(year, month + 1, day);
-
-          return (
-            <button
-              key={day}
-              onClick={() => setSelected(sel ? null : day)}
-              className={`border-r border-b border-[#d4cfc4] p-0.5 relative flex flex-col items-start transition-colors text-left overflow-hidden ${
-                sel
-                  ? "bg-[#1c1712]/10"
-                  : todayCell
-                  ? "bg-[#fff8dc]"
-                  : "hover:bg-[#1c1712]/4"
+          {/* 요일 헤더 */}
+          {DAY_KO.map((d, i) => (
+            <div
+              key={d}
+              className={`bg-[#f5f0e8] border-b border-r border-[#d4cfc4] text-center text-[11px] font-black py-1 tracking-widest ${
+                i === 0 ? "text-[#9b1a1a]" : i === 6 ? "text-[#1a1a8b]" : "text-[#1c1712]"
               }`}
-              style={{ height: "68px" }}
+              style={{ fontFamily: "var(--font-serif)" }}
             >
-              {/* 날짜 숫자 + 음력 */}
-              <div className="flex items-baseline gap-0.5 px-0.5">
-                <span
-                  className={`text-sm font-black leading-none ${dayColor(dow, dateKey)} ${todayCell ? "underline underline-offset-2 decoration-2" : ""}`}
-                  style={{ fontFamily: "var(--font-serif)" }}
-                >
-                  {day}
-                </span>
-                {lunar && (
-                  <span className="text-[8px] leading-none text-[#8c7a60]">
-                    {lunar.intercalation ? "윤" : ""}{lunar.month}/{lunar.day}
+              {d}
+            </div>
+          ))}
+
+          {/* 빈 셀 */}
+          {Array.from({ length: firstDay }).map((_, i) => (
+            <div
+              key={`b${i}`}
+              className="border-b border-r border-[#d4cfc4] bg-[#f5f0e8]"
+              style={{ height: "68px" }}
+            />
+          ))}
+
+          {/* 날짜 셀 */}
+          {Array.from({ length: daysInMonth }, (_, i) => i + 1).map((day) => {
+            const dow     = (firstDay + day - 1) % 7;
+            const dateKey = toKey(year, month, day);
+            const memoText = memos[dateKey];
+            const hasMemo = !!memoText;
+            const todayCell = isToday(day);
+            const sel = selected === day;
+            const holiday = holidayMap.get(dateKey);
+            const ddayItem = ddays.find(d => d.key === dateKey);
+            const lunar = solarToLunar(year, month + 1, day);
+
+            return (
+              <button
+                key={day}
+                onClick={() => setSelected(sel ? null : day)}
+                className={`border-b border-r border-[#d4cfc4] p-0.5 relative flex flex-col items-start transition-colors text-left overflow-hidden ${
+                  sel
+                    ? "bg-[#1c1712]/10"
+                    : todayCell
+                    ? "bg-[#fff8dc]"
+                    : "hover:bg-[#1c1712]/4"
+                }`}
+                style={{ height: "68px" }}
+              >
+                {/* 날짜 숫자 + 음력 */}
+                <div className="flex items-baseline gap-0.5 px-0.5">
+                  <span
+                    className={`text-sm font-black leading-none ${dayColor(dow, dateKey)} ${todayCell ? "underline underline-offset-2 decoration-2" : ""}`}
+                    style={{ fontFamily: "var(--font-serif)" }}
+                  >
+                    {day}
+                  </span>
+                  {lunar && (
+                    <span className="text-[8px] leading-none text-[#8c7a60]">
+                      {lunar.intercalation ? "윤" : ""}{lunar.month}/{lunar.day}
+                    </span>
+                  )}
+                </div>
+
+                {/* 공휴일 이름 */}
+                {holiday && (
+                  <span className="text-[7px] font-bold leading-none px-0.5 truncate w-full text-[#9b1a1a]">
+                    {holiday}
                   </span>
                 )}
-              </div>
 
-              {/* 공휴일 이름 */}
-              {holiday && (
-                <span className="text-[7px] font-bold leading-none px-0.5 truncate w-full text-[#9b1a1a]">
-                  {holiday}
-                </span>
-              )}
+                {/* D-Day */}
+                {ddayItem && (
+                  <span className="text-[7px] font-black leading-none px-0.5 truncate w-full text-[#006644]">
+                    {formatDday(calcDday(dateKey))}
+                  </span>
+                )}
 
-              {/* D-Day */}
-              {ddayItem && (
-                <span className="text-[7px] font-black leading-none px-0.5 truncate w-full text-[#006644]">
-                  {formatDday(calcDday(dateKey))}
-                </span>
-              )}
+                {/* 메모 미리보기 */}
+                {hasMemo && (
+                  <span
+                    className="text-[7px] leading-tight px-0.5 w-full overflow-hidden mt-auto text-[#5a5040]"
+                    style={{
+                      display: "-webkit-box",
+                      WebkitLineClamp: 2,
+                      WebkitBoxOrient: "vertical",
+                      overflow: "hidden",
+                    }}
+                  >
+                    {memoText}
+                  </span>
+                )}
+              </button>
+            );
+          })}
+        </div>
 
-              {/* 메모 미리보기 */}
-              {hasMemo && (
-                <span
-                  className="text-[7px] leading-tight px-0.5 w-full overflow-hidden mt-auto text-[#5a5040]"
-                  style={{
-                    display: "-webkit-box",
-                    WebkitLineClamp: 2,
-                    WebkitBoxOrient: "vertical",
-                    overflow: "hidden",
-                  }}
-                >
-                  {memoText}
-                </span>
-              )}
-            </button>
-          );
-        })}
-      </div>
-
-      {/* ── 선택 날짜 패널 ── */}
-      {selected !== null && (() => {
-        const dow = (firstDay + selected - 1) % 7;
-        const dateKey = toKey(year, month, selected);
-        const holiday = holidayMap.get(dateKey);
-        const existingDday = ddays.find(d => d.key === dateKey);
-        const ddayN = existingDday ? calcDday(dateKey) : null;
-        return (
-          <div className="border border-t-0 border-[#d4cfc4] bg-[#fdf8f0]">
+        {/* ── 선택 날짜 패널 ── */}
+        {selected !== null && (() => {
+          const dow = (firstDay + selected - 1) % 7;
+          const dateKey = toKey(year, month, selected);
+          const holiday = holidayMap.get(dateKey);
+          const existingDday = ddays.find(d => d.key === dateKey);
+          const ddayN = existingDday ? calcDday(dateKey) : null;
+          return (
+          <div className="border-t border-[#d4cfc4] bg-[#fdf8f0]">
             {/* 패널 헤더 */}
             <div className="flex items-center justify-between px-3 py-2 border-b border-[#d4cfc4]">
               <span className="text-sm font-black text-[#1c1712]" style={{ fontFamily: "var(--font-serif)" }}>
@@ -437,6 +438,8 @@ export default function CalendarClient() {
           </div>
         );
       })()}
+
+      </div>{/* border 컨테이너 닫기 */}
 
       {/* ── D-Day 전체 목록 ── */}
       {ddays.length > 0 && (
