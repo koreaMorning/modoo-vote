@@ -1,8 +1,8 @@
 import Header from "@/components/Header";
-import Link from "next/link";
+import { MessageSquare } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { Room, RoomCategoryWithRooms } from "@/lib/rooms";
-import { MessageSquare } from "lucide-react";
+import RoomsClient from "./RoomsClient";
 
 export const metadata = { title: "토론방 - 모두의 투표" };
 
@@ -18,6 +18,23 @@ export default async function RoomsPage() {
     ...cat,
     rooms: (rms ?? []).filter((r) => r.category_id === cat.id) as Room[],
   }));
+
+  /* 방별 찬성/반대 건수 집계 */
+  const slugs = (rms ?? []).map((r) => r.slug);
+  const stanceCounts: Record<string, { pro: number; con: number }> = {};
+
+  if (slugs.length > 0) {
+    const { data: msgs } = await supabase
+      .from("chat_messages")
+      .select("room_slug, stance")
+      .in("room_slug", slugs);
+
+    for (const msg of msgs ?? []) {
+      if (!stanceCounts[msg.room_slug]) stanceCounts[msg.room_slug] = { pro: 0, con: 0 };
+      if (msg.stance === "pro") stanceCounts[msg.room_slug].pro++;
+      else if (msg.stance === "con") stanceCounts[msg.room_slug].con++;
+    }
+  }
 
   return (
     <div className="min-h-screen flex flex-col text-[#1c1712]">
@@ -39,52 +56,7 @@ export default async function RoomsPage() {
             토론방을 준비 중입니다.
           </div>
         ) : (
-          <div className="space-y-10">
-            {categories.map((cat, idx) => (
-              <section key={cat.id}>
-                {/* 카테고리 구분선 */}
-                {idx > 0 && <div className="border-t-2 border-[#1c1712] mb-10" />}
-
-                {/* 카테고리 제목 */}
-                <div className="flex items-center gap-3 mb-4">
-                  <h3 className="text-[11px] font-black tracking-[0.2em] uppercase text-[#8c8070] shrink-0">
-                    {cat.name}
-                  </h3>
-                  <div className="flex-1 h-px bg-[#d4cfc4]" />
-                </div>
-
-                {/* 방 목록 */}
-                {cat.rooms.length === 0 ? (
-                  <p className="text-xs text-[#a09080] border border-[#d4cfc4] px-4 py-6 text-center">
-                    아직 등록된 방이 없습니다.
-                  </p>
-                ) : (
-                  <div className="border-l border-t border-[#d4cfc4]">
-                    {cat.rooms.map((room) => (
-                      <Link
-                        key={room.id}
-                        href={`/rooms/${room.slug}`}
-                        className="flex items-start gap-4 border-r border-b border-[#d4cfc4] px-5 py-4 hover:bg-[#1c1712]/4 transition-colors group"
-                      >
-                        <span className="text-2xl shrink-0 mt-0.5">{room.icon ?? "💬"}</span>
-                        <div className="min-w-0">
-                          <h4 className="text-base font-black font-serif mb-1 group-hover:underline underline-offset-2">
-                            {room.title} 토론방
-                          </h4>
-                          {room.description && (
-                            <p className="text-xs text-[#8c8070] leading-relaxed">{room.description}</p>
-                          )}
-                          <p className="mt-2 text-[10px] text-[#a09080] font-bold tracking-widest uppercase">
-                            입장하기 →
-                          </p>
-                        </div>
-                      </Link>
-                    ))}
-                  </div>
-                )}
-              </section>
-            ))}
-          </div>
+          <RoomsClient categories={categories} stanceCounts={stanceCounts} />
         )}
       </main>
     </div>
