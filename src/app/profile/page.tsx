@@ -1,5 +1,6 @@
 import Header from "@/components/Header";
 import { User, Bookmark, History } from "lucide-react";
+import ProfileNickname from "./ProfileNickname";
 
 export const metadata = { title: "내정보 - 모두의 투표" };
 
@@ -15,8 +16,9 @@ export default function ProfilePage() {
             <User size={28} strokeWidth={1.5} className="text-[#6b6356]" />
           </div>
           <div>
-            <p className="text-base font-black font-serif">익명 사용자</p>
-            <p className="text-xs text-[#8c8070] mt-0.5">로그인 기능 준비 중</p>
+            <p className="text-[10px] text-[#8c8070] font-bold uppercase tracking-widest mb-0.5">닉네임</p>
+            <ProfileNickname />
+            <p className="text-[10px] text-[#a09080] mt-1">토론방·독자의견 공통 사용</p>
           </div>
         </div>
 
