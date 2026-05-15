@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, memo } from 'react';
 import Link from 'next/link';
 import { ArrowLeft, Send, Users } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
@@ -44,7 +44,15 @@ interface ChatMsg {
   created_at: string;
 }
 
-export default function RoomClient({ room }: { room: Room }) {
+interface RoomPost {
+  id: string;
+  room_slug: string;
+  title: string;
+  content: string;
+  updated_at: string;
+}
+
+export default function RoomClient({ room, post }: { room: Room; post: RoomPost | null }) {
   const [msgs, setMsgs]       = useState<ChatMsg[]>([]);
   const [text, setText]       = useState('');
   const [stance, setStance]   = useState<'pro' | 'con' | null>(null);
@@ -171,6 +179,11 @@ export default function RoomClient({ room }: { room: Room }) {
           </div>
         </div>
       </div>
+
+      {/* ── 주제 게시글 ── */}
+      {post && (
+        <RoomPostBanner post={post} />
+      )}
 
       {/* ── 좌우 분할 채팅 ── */}
       <div className="flex-1 flex border border-[#d4cfc4] overflow-hidden min-h-0">
@@ -355,3 +368,37 @@ export default function RoomClient({ room }: { room: Room }) {
     </div>
   );
 }
+
+/* ── 주제 게시글 배너 ── */
+const RoomPostBanner = memo(function RoomPostBanner({ post }: { post: { title: string; content: string; updated_at: string } }) {
+  const [expanded, setExpanded] = useState(false);
+
+  return (
+    <div className="border-x border-b border-[#d4cfc4] bg-[#fdf8f0] shrink-0">
+      {/* 게시글 헤더 */}
+      <div className="flex items-center justify-between px-3 py-1.5 bg-[#1c1712]/5 border-b border-[#d4cfc4]">
+        <span className="text-[9px] font-black tracking-widest uppercase text-[#8c8070]">주제 게시글</span>
+        <span className="text-[9px] text-[#a09080]">
+          {new Date(post.updated_at).toLocaleDateString('ko-KR', { month: 'long', day: 'numeric' })}
+        </span>
+      </div>
+      {/* 제목 */}
+      <div className="px-3 pt-2 pb-1">
+        <p className="text-[13px] font-black font-serif leading-snug text-[#1c1712]">{post.title}</p>
+      </div>
+      {/* 내용 */}
+      <div
+        className={`px-3 pb-2 overflow-hidden transition-all duration-300 ${expanded ? '' : 'max-h-[52px]'}`}
+      >
+        <p className="text-[11px] text-[#4a4035] leading-relaxed whitespace-pre-wrap">{post.content}</p>
+      </div>
+      {/* 더보기 버튼 */}
+      <button
+        onClick={() => setExpanded((v) => !v)}
+        className="w-full text-[9px] font-bold text-[#8c8070] hover:text-[#1c1712] py-1 border-t border-[#d4cfc4] transition-colors tracking-widest"
+      >
+        {expanded ? '▲ 접기' : '▼ 더보기'}
+      </button>
+    </div>
+  );
+});

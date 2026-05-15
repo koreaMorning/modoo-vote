@@ -1,14 +1,19 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import {
   createPoll,
   updatePoll,
   togglePollActive,
   getPolls,
   logoutAdmin,
+  upsertRoomPost,
+  deleteRoomPost,
+  getRoomPosts,
   PollInput,
+  RoomPost,
 } from "./actions";
+import { ROOMS } from "@/lib/rooms";
 import { Category } from "@/types";
 
 const CATEGORIES: Category[] = ["정치", "경제", "사회", "문화", "스포츠", "국제", "기술", "환경"];
@@ -32,7 +37,7 @@ interface PollRow {
   total_votes: number;
 }
 
-type Tab = "news" | "posts" | "write";
+type Tab = "news" | "posts" | "write" | "rooms";
 
 interface Props {
   initialPolls: PollRow[];
@@ -68,7 +73,7 @@ export default function AdminDashboard({ initialPolls }: Props) {
       {/* Tabs */}
       <div className="border-b-2 border-[#1c1712] bg-[#ede0c0]">
         <div className="max-w-6xl mx-auto px-6 flex gap-0">
-          {([["news", "뉴스 스크랩"], ["posts", "게시글 관리"], ["write", "직접 작성"]] as [Tab, string][]).map(
+          {([["news", "뉴스 스크랩"], ["posts", "게시글 관리"], ["write", "직접 작성"], ["rooms", "토론방 게시글"]] as [Tab, string][]).map(
             ([key, label]) => (
               <button
                 key={key}
@@ -90,6 +95,7 @@ export default function AdminDashboard({ initialPolls }: Props) {
         {tab === "news" && <NewsTab />}
         {tab === "posts" && <PostsTab polls={polls} onRefresh={refreshPolls} />}
         {tab === "write" && <WriteTab onCreated={refreshPolls} />}
+        {tab === "rooms" && <RoomPostsTab />}
       </div>
     </div>
   );
@@ -554,6 +560,158 @@ function PostsTab({ polls, onRefresh }: { polls: PollRow[]; onRefresh: () => Pro
             )}
           </div>
         ))}
+      </div>
+    </div>
+  );
+}
+
+/* ─────────────────── 토론방 게시글 탭 ─────────────────── */
+function RoomPostsTab() {
+  const [posts, setPosts] = useState<Record<string, RoomPost>>({});
+  const [forms, setForms] = useState<Record<string, { title: string; content: string }>>(
+    Object.fromEntries(ROOMS.map((r) => [r.slug, { title: "", content: "" }]))
+  );
+  const [saving, setSaving] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState<string | null>(null);
+  const [msg, setMsg] = useState<Record<string, { type: "ok" | "err"; text: string }>>({});
+
+  useEffect(() => {
+    getRoomPosts().then((data) => {
+      const map: Record<string, RoomPost> = {};
+      data.forEach((p) => { map[p.room_slug] = p; });
+      setPosts(map);
+      setForms((prev) => {
+        const next = { ...prev };
+        data.forEach((p) => { next[p.room_slug] = { title: p.title, content: p.content }; });
+        return next;
+      });
+    });
+  }, []);
+
+  function setForm(slug: string, patch: Partial<{ title: string; content: string }>) {
+    setForms((prev) => ({ ...prev, [slug]: { ...prev[slug], ...patch } }));
+  }
+
+  async function handleSave(slug: string) {
+    const f = forms[slug];
+    if (!f.title.trim() || !f.content.trim()) {
+      setMsg((prev) => ({ ...prev, [slug]: { type: "err", text: "제목과 내용을 모두 입력해주세요" } }));
+      return;
+    }
+    setSaving(slug);
+    const result = await upsertRoomPost({ room_slug: slug, title: f.title, content: f.content });
+    setSaving(null);
+    if (result.success) {
+      setPosts((prev) => ({
+        ...prev,
+        [slug]: { id: prev[slug]?.id ?? "", room_slug: slug, title: f.title, content: f.content, updated_at: new Date().toISOString() },
+      }));
+      setMsg((prev) => ({ ...prev, [slug]: { type: "ok", text: "저장되었습니다" } }));
+    } else {
+      setMsg((prev) => ({ ...prev, [slug]: { type: "err", text: result.error ?? "실패" } }));
+    }
+    setTimeout(() => setMsg((prev) => { const n = { ...prev }; delete n[slug]; return n; }), 3000);
+  }
+
+  async function handleDelete(slug: string) {
+    setDeleting(slug);
+    const result = await deleteRoomPost(slug);
+    setDeleting(null);
+    if (result.success) {
+      setPosts((prev) => { const n = { ...prev }; delete n[slug]; return n; });
+      setForms((prev) => ({ ...prev, [slug]: { title: "", content: "" } }));
+      setMsg((prev) => ({ ...prev, [slug]: { type: "ok", text: "삭제되었습니다" } }));
+    } else {
+      setMsg((prev) => ({ ...prev, [slug]: { type: "err", text: result.error ?? "삭제 실패" } }));
+    }
+    setTimeout(() => setMsg((prev) => { const n = { ...prev }; delete n[slug]; return n; }), 3000);
+  }
+
+  return (
+    <div>
+      <h2 className="text-sm font-black uppercase tracking-widest mb-6">토론방 주제 게시글</h2>
+      <p className="text-xs text-[#8c8070] mb-6">각 토론방 채팅창 상단에 표시되는 주제 게시글을 관리합니다. 방 당 1개씩 등록/수정할 수 있습니다.</p>
+      <div className="space-y-6">
+        {ROOMS.map((room) => {
+          const existing = posts[room.slug];
+          const f = forms[room.slug] ?? { title: "", content: "" };
+          const m = msg[room.slug];
+          return (
+            <div key={room.slug} className="border-2 border-[#1c1712]">
+              {/* 방 헤더 */}
+              <div className="bg-[#1c1712] text-[#f0e5c0] px-4 py-2.5 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span>{room.icon}</span>
+                  <span className="font-black text-sm">{room.title} 토론방</span>
+                  <span className="text-[10px] text-[#c8b890] font-mono">/{room.slug}</span>
+                </div>
+                {existing && (
+                  <span className="text-[10px] text-[#c8b890]">
+                    최종 수정: {new Date(existing.updated_at).toLocaleDateString("ko-KR")}
+                  </span>
+                )}
+              </div>
+
+              {/* 폼 */}
+              <div className="p-4 space-y-3">
+                {m && (
+                  <div className={`border p-2 text-xs font-medium ${m.type === "ok" ? "border-green-600 bg-green-50 text-green-800" : "border-red-500 bg-red-50 text-red-700"}`}>
+                    {m.text}
+                  </div>
+                )}
+                <div>
+                  <label className="text-[10px] font-black uppercase tracking-widest text-[#6b6356] block mb-1">제목</label>
+                  <input
+                    value={f.title}
+                    onChange={(e) => setForm(room.slug, { title: e.target.value })}
+                    maxLength={200}
+                    placeholder="토론 주제 제목"
+                    className="w-full border-2 border-[#c8bfa8] bg-[#f5f0e8] px-3 py-2 text-sm font-bold"
+                  />
+                </div>
+                <div>
+                  <label className="text-[10px] font-black uppercase tracking-widest text-[#6b6356] block mb-1">내용</label>
+                  <textarea
+                    value={f.content}
+                    onChange={(e) => setForm(room.slug, { content: e.target.value })}
+                    maxLength={2000}
+                    rows={4}
+                    placeholder="토론 주제 설명, 배경 정보 등을 입력하세요"
+                    className="w-full border-2 border-[#c8bfa8] bg-[#f5f0e8] px-3 py-2 text-sm leading-relaxed resize-none"
+                  />
+                  <p className="text-[10px] text-[#a09080] mt-0.5 text-right">{f.content.length}/2000</p>
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => handleSave(room.slug)}
+                    disabled={saving === room.slug}
+                    className="border-2 border-[#1c1712] bg-[#1c1712] text-[#f0e5c0] px-5 py-2 text-sm font-bold hover:bg-[#3d2b1f] transition-colors disabled:opacity-50"
+                  >
+                    {saving === room.slug ? "저장 중..." : existing ? "수정 저장" : "등록"}
+                  </button>
+                  {existing && (
+                    <button
+                      onClick={() => handleDelete(room.slug)}
+                      disabled={deleting === room.slug}
+                      className="border-2 border-red-400 text-red-600 px-4 py-2 text-sm hover:bg-red-50 transition-colors disabled:opacity-50"
+                    >
+                      {deleting === room.slug ? "..." : "삭제"}
+                    </button>
+                  )}
+                  {existing && (
+                    <a
+                      href={`/rooms/${room.slug}`}
+                      target="_blank"
+                      className="border-2 border-[#c8bfa8] px-4 py-2 text-sm hover:border-[#1c1712] transition-colors"
+                    >
+                      미리보기 →
+                    </a>
+                  )}
+                </div>
+              </div>
+            </div>
+          );
+        })}
       </div>
     </div>
   );

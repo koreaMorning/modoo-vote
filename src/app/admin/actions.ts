@@ -111,6 +111,49 @@ export async function togglePollActive(id: string, isActive: boolean): Promise<{
   return { success: true };
 }
 
+/* ─────────────────── 토론방 게시글 ─────────────────── */
+
+export interface RoomPost {
+  id: string;
+  room_slug: string;
+  title: string;
+  content: string;
+  updated_at: string;
+}
+
+export interface RoomPostInput {
+  room_slug: string;
+  title: string;
+  content: string;
+}
+
+export async function upsertRoomPost(data: RoomPostInput): Promise<{ success: boolean; error?: string }> {
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("room_posts")
+    .upsert(
+      { room_slug: data.room_slug, title: data.title.trim(), content: data.content.trim(), updated_at: new Date().toISOString() },
+      { onConflict: "room_slug" }
+    );
+  if (error) return { success: false, error: error.message };
+  revalidatePath(`/rooms/${data.room_slug}`);
+  return { success: true };
+}
+
+export async function deleteRoomPost(roomSlug: string): Promise<{ success: boolean; error?: string }> {
+  const supabase = await createClient();
+  const { error } = await supabase.from("room_posts").delete().eq("room_slug", roomSlug);
+  if (error) return { success: false, error: error.message };
+  revalidatePath(`/rooms/${roomSlug}`);
+  return { success: true };
+}
+
+export async function getRoomPosts(): Promise<RoomPost[]> {
+  const supabase = await createClient();
+  const { data } = await supabase.from("room_posts").select("*").order("updated_at", { ascending: false });
+  return (data ?? []) as RoomPost[];
+}
+
 export async function getPolls() {
   const supabase = await createClient();
   const { data, error } = await supabase
