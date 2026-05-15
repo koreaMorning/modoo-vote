@@ -7,6 +7,7 @@ import { createClient } from '@/lib/supabase/client';
 import { Room } from '@/lib/rooms';
 
 const CHAT_FP_KEY    = 'modoo-chat-fp';
+const NICKNAME_KEY   = 'modoo-chat-nickname';
 const stanceKey = (slug: string) => `modoo-room-stance-${slug}`;
 
 function getFingerprint(): string {
@@ -35,12 +36,21 @@ function saveStance(slug: string, s: 'pro' | 'con') {
   try { localStorage.setItem(stanceKey(slug), s); } catch {}
 }
 
+function getSavedNickname(): string {
+  try { return localStorage.getItem(NICKNAME_KEY) ?? ''; } catch { return ''; }
+}
+
+function saveNickname(name: string) {
+  try { localStorage.setItem(NICKNAME_KEY, name); } catch {}
+}
+
 interface ChatMsg {
   id: string;
   room_slug: string;
   content: string;
   stance: 'pro' | 'con';
   fingerprint: string;
+  nickname: string;
   created_at: string;
 }
 
@@ -53,12 +63,14 @@ interface RoomPost {
 }
 
 export default function RoomClient({ room, post }: { room: Room; post: RoomPost | null }) {
-  const [msgs, setMsgs]       = useState<ChatMsg[]>([]);
-  const [text, setText]       = useState('');
-  const [stance, setStance]   = useState<'pro' | 'con' | null>(null);
-  const [fp, setFp]           = useState('');
-  const [loading, setLoading] = useState(true);
-  const [sending, setSending]   = useState(false);
+  const [msgs, setMsgs]             = useState<ChatMsg[]>([]);
+  const [text, setText]             = useState('');
+  const [stance, setStance]         = useState<'pro' | 'con' | null>(null);
+  const [fp, setFp]                 = useState('');
+  const [nickname, setNickname]     = useState('');
+  const [nicknameInput, setNicknameInput] = useState('');
+  const [loading, setLoading]       = useState(true);
+  const [sending, setSending]       = useState(false);
   const [stanceOpen, setStanceOpen] = useState(false);
   const proBottomRef            = useRef<HTMLDivElement>(null);
   const conBottomRef            = useRef<HTMLDivElement>(null);
@@ -80,7 +92,17 @@ export default function RoomClient({ room, post }: { room: Room; post: RoomPost 
   useEffect(() => {
     setFp(getFingerprint());
     setStance(getSavedStance(room.slug));
+    const saved = getSavedNickname();
+    setNickname(saved);
+    setNicknameInput(saved);
   }, [room.slug]);
+
+  function confirmNickname() {
+    const name = nicknameInput.trim();
+    if (!name) return;
+    saveNickname(name);
+    setNickname(name);
+  }
 
   function chooseStance(s: 'pro' | 'con') {
     saveStance(room.slug, s);
@@ -130,7 +152,7 @@ export default function RoomClient({ room, post }: { room: Room; post: RoomPost 
 
   const handleSubmit = useCallback(async () => {
     const content = text.trim();
-    if (!content || !fp || !stance || sending) return;
+    if (!content || !fp || !stance || !nickname || sending) return;
     setSending(true);
     setText('');
     await supabase.from('chat_messages').insert({
@@ -138,9 +160,10 @@ export default function RoomClient({ room, post }: { room: Room; post: RoomPost 
       content,
       stance,
       fingerprint: fp,
+      nickname,
     });
     setSending(false);
-  }, [text, fp, stance, sending, room.slug]);
+  }, [text, fp, stance, nickname, sending, room.slug]);
 
   const proCount = msgs.filter((m) => m.stance === 'pro').length;
   const conCount = msgs.filter((m) => m.stance === 'con').length;
@@ -215,8 +238,10 @@ export default function RoomClient({ room, post }: { room: Room; post: RoomPost 
                       className={`px-2.5 py-2 border-b border-[#c8dce8] last:border-b-0 ${isMine ? 'bg-[#4d9ab5]/8' : ''}`}
                     >
                       <div className="flex items-center gap-1.5 mb-0.5">
-                        <span className="text-[9px] text-[#b0a080] leading-none">{time}</span>
-                        {isMine && <span className="text-[8px] text-[#1a5c75] font-black leading-none">나</span>}
+                        <span className={`text-[10px] font-bold leading-none truncate max-w-[80px] ${isMine ? 'text-[#1a5c75]' : 'text-[#4a6070]'}`}>
+                          {msg.nickname || '익명'}
+                        </span>
+                        <span className="text-[9px] text-[#b0a080] leading-none shrink-0">{time}</span>
                       </div>
                       <p className={`text-[12px] font-serif leading-snug ${isMine ? 'text-[#1c1712] font-bold' : 'text-[#2d2520]'}`}>
                         {msg.content}
@@ -257,8 +282,10 @@ export default function RoomClient({ room, post }: { room: Room; post: RoomPost 
                       className={`px-2.5 py-2 border-b border-[#e8c8d0] last:border-b-0 ${isMine ? 'bg-[#c4788a]/8' : ''}`}
                     >
                       <div className="flex items-center gap-1.5 mb-0.5">
-                        <span className="text-[9px] text-[#9098b0] leading-none">{time}</span>
-                        {isMine && <span className="text-[8px] text-[#c4788a] font-black leading-none">나</span>}
+                        <span className={`text-[10px] font-bold leading-none truncate max-w-[80px] ${isMine ? 'text-[#c4788a]' : 'text-[#7a5060]'}`}>
+                          {msg.nickname || '익명'}
+                        </span>
+                        <span className="text-[9px] text-[#9098b0] leading-none shrink-0">{time}</span>
                       </div>
                       <p className={`text-[12px] font-serif leading-snug ${isMine ? 'text-[#1c1712] font-bold' : 'text-[#2d2520]'}`}>
                         {msg.content}
@@ -274,13 +301,50 @@ export default function RoomClient({ room, post }: { room: Room; post: RoomPost 
 
       </div>
 
-      {/* ── 진영 선택 or 입력창 ── */}
-      {stance === null ? (
-        /* 진영 미선택: 선택 화면 */
+      {/* ── 닉네임 / 진영 선택 / 입력창 ── */}
+      {nickname === '' ? (
+        /* Step 1: 닉네임 입력 */
         <div className="border-x border-b border-[#d4cfc4] bg-white px-4 py-4 shrink-0">
           <p className="text-[11px] font-black tracking-widest text-center text-[#6b6356] mb-3 uppercase">
-            먼저 진영을 선택하세요
+            닉네임을 입력하세요
           </p>
+          <div className="flex gap-2">
+            <input
+              type="text"
+              value={nicknameInput}
+              onChange={(e) => setNicknameInput(e.target.value)}
+              onKeyDown={(e) => { if (e.key === 'Enter') confirmNickname(); }}
+              placeholder="사용할 닉네임 (최대 20자)"
+              maxLength={20}
+              autoFocus
+              className="flex-1 border-b-2 border-[#c8bfa8] focus:border-[#1c1712] bg-transparent px-1 py-2 text-sm font-serif focus:outline-none transition-colors placeholder:text-[#b0a898]"
+            />
+            <button
+              onClick={confirmNickname}
+              disabled={!nicknameInput.trim()}
+              className="px-4 py-2 bg-[#1c1712] text-[#fdf8f0] text-xs font-black hover:opacity-80 disabled:opacity-35 transition-opacity shrink-0"
+            >
+              확인
+            </button>
+          </div>
+          <p className="text-[9px] text-[#a09080] text-center mt-2">
+            닉네임은 브라우저에 저장되어 다음 방문 시 유지됩니다
+          </p>
+        </div>
+      ) : stance === null ? (
+        /* Step 2: 진영 선택 */
+        <div className="border-x border-b border-[#d4cfc4] bg-white px-4 py-4 shrink-0">
+          <div className="flex items-center justify-between mb-3">
+            <p className="text-[11px] font-black tracking-widest text-[#6b6356] uppercase">
+              진영을 선택하세요
+            </p>
+            <button
+              onClick={() => setNickname('')}
+              className="text-[9px] text-[#a09080] hover:text-[#1c1712] transition-colors underline underline-offset-2"
+            >
+              닉네임 변경 ({nickname})
+            </button>
+          </div>
           <div className="flex gap-3">
             <button
               onClick={() => chooseStance('pro')}
