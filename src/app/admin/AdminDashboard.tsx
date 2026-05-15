@@ -7,13 +7,18 @@ import {
   togglePollActive,
   getPolls,
   logoutAdmin,
-  upsertRoomPost,
-  deleteRoomPost,
-  getRoomPosts,
+  getCategoriesWithRooms,
+  createCategory,
+  updateCategory,
+  deleteCategory,
+  createRoom,
+  updateRoom,
+  deleteRoom,
   PollInput,
-  RoomPost,
+  CategoryRow,
+  RoomRow,
+  RoomInput,
 } from "./actions";
-import { ROOMS } from "@/lib/rooms";
 import { Category } from "@/types";
 
 const CATEGORIES: Category[] = ["정치", "경제", "사회", "문화", "스포츠", "국제", "기술", "환경"];
@@ -73,7 +78,7 @@ export default function AdminDashboard({ initialPolls }: Props) {
       {/* Tabs */}
       <div className="border-b-2 border-[#1c1712] bg-[#ede0c0]">
         <div className="max-w-6xl mx-auto px-6 flex gap-0">
-          {([["news", "뉴스 스크랩"], ["posts", "게시글 관리"], ["write", "직접 작성"], ["rooms", "토론방 게시글"]] as [Tab, string][]).map(
+          {([["news", "뉴스 스크랩"], ["posts", "게시글 관리"], ["write", "직접 작성"], ["rooms", "토론방 관리"]] as [Tab, string][]).map(
             ([key, label]) => (
               <button
                 key={key}
@@ -95,7 +100,7 @@ export default function AdminDashboard({ initialPolls }: Props) {
         {tab === "news" && <NewsTab />}
         {tab === "posts" && <PostsTab polls={polls} onRefresh={refreshPolls} />}
         {tab === "write" && <WriteTab onCreated={refreshPolls} />}
-        {tab === "rooms" && <RoomPostsTab />}
+        {tab === "rooms" && <RoomsManagementTab />}
       </div>
     </div>
   );
@@ -565,153 +570,344 @@ function PostsTab({ polls, onRefresh }: { polls: PollRow[]; onRefresh: () => Pro
   );
 }
 
-/* ─────────────────── 토론방 게시글 탭 ─────────────────── */
-function RoomPostsTab() {
-  const [posts, setPosts] = useState<Record<string, RoomPost>>({});
-  const [forms, setForms] = useState<Record<string, { title: string; content: string }>>(
-    Object.fromEntries(ROOMS.map((r) => [r.slug, { title: "", content: "" }]))
-  );
-  const [saving, setSaving] = useState<string | null>(null);
-  const [deleting, setDeleting] = useState<string | null>(null);
-  const [msg, setMsg] = useState<Record<string, { type: "ok" | "err"; text: string }>>({});
+/* ─────────────────── 토론방 관리 탭 ─────────────────── */
+type CatWithRooms = CategoryRow & { rooms: RoomRow[] };
 
-  useEffect(() => {
-    getRoomPosts().then((data) => {
-      const map: Record<string, RoomPost> = {};
-      data.forEach((p) => { map[p.room_slug] = p; });
-      setPosts(map);
-      setForms((prev) => {
-        const next = { ...prev };
-        data.forEach((p) => { next[p.room_slug] = { title: p.title, content: p.content }; });
-        return next;
-      });
-    });
-  }, []);
+const EMPTY_ROOM: RoomInput = {
+  category_id: "", title: "", description: "", slug: "", icon: "💬", sort_order: 0, post_title: "", post_content: "",
+};
 
-  function setForm(slug: string, patch: Partial<{ title: string; content: string }>) {
-    setForms((prev) => ({ ...prev, [slug]: { ...prev[slug], ...patch } }));
+function RoomsManagementTab() {
+  const [categories, setCategories] = useState<CatWithRooms[]>([]);
+  const [dataLoading, setDataLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [globalMsg, setGlobalMsg] = useState<{ type: "ok" | "err"; text: string } | null>(null);
+
+  // 카테고리 편집 상태
+  const [addingCat, setAddingCat] = useState(false);
+  const [newCatForm, setNewCatForm] = useState({ name: "", sort_order: 1 });
+  const [editingCatId, setEditingCatId] = useState<string | null>(null);
+  const [editCatForm, setEditCatForm] = useState({ name: "", sort_order: 0 });
+
+  // 방 편집 상태
+  const [addingRoomCatId, setAddingRoomCatId] = useState<string | null>(null);
+  const [newRoomForm, setNewRoomForm] = useState<RoomInput>(EMPTY_ROOM);
+  const [editingRoomId, setEditingRoomId] = useState<string | null>(null);
+  const [editRoomForm, setEditRoomForm] = useState<RoomInput>(EMPTY_ROOM);
+
+  function flash(type: "ok" | "err", text: string) {
+    setGlobalMsg({ type, text });
+    setTimeout(() => setGlobalMsg(null), 3000);
   }
 
-  async function handleSave(slug: string) {
-    const f = forms[slug];
-    if (!f.title.trim() || !f.content.trim()) {
-      setMsg((prev) => ({ ...prev, [slug]: { type: "err", text: "제목과 내용을 모두 입력해주세요" } }));
-      return;
-    }
-    setSaving(slug);
-    const result = await upsertRoomPost({ room_slug: slug, title: f.title, content: f.content });
-    setSaving(null);
-    if (result.success) {
-      setPosts((prev) => ({
-        ...prev,
-        [slug]: { id: prev[slug]?.id ?? "", room_slug: slug, title: f.title, content: f.content, updated_at: new Date().toISOString() },
-      }));
-      setMsg((prev) => ({ ...prev, [slug]: { type: "ok", text: "저장되었습니다" } }));
-    } else {
-      setMsg((prev) => ({ ...prev, [slug]: { type: "err", text: result.error ?? "실패" } }));
-    }
-    setTimeout(() => setMsg((prev) => { const n = { ...prev }; delete n[slug]; return n; }), 3000);
+  async function reload() {
+    const data = await getCategoriesWithRooms();
+    setCategories(data);
   }
 
-  async function handleDelete(slug: string) {
-    setDeleting(slug);
-    const result = await deleteRoomPost(slug);
-    setDeleting(null);
-    if (result.success) {
-      setPosts((prev) => { const n = { ...prev }; delete n[slug]; return n; });
-      setForms((prev) => ({ ...prev, [slug]: { title: "", content: "" } }));
-      setMsg((prev) => ({ ...prev, [slug]: { type: "ok", text: "삭제되었습니다" } }));
-    } else {
-      setMsg((prev) => ({ ...prev, [slug]: { type: "err", text: result.error ?? "삭제 실패" } }));
-    }
-    setTimeout(() => setMsg((prev) => { const n = { ...prev }; delete n[slug]; return n; }), 3000);
+  useEffect(() => { reload().finally(() => setDataLoading(false)); }, []);
+
+  // ── 카테고리 핸들러 ──
+  async function handleAddCat() {
+    if (!newCatForm.name.trim()) return;
+    setSaving(true);
+    const r = await createCategory({ name: newCatForm.name, sort_order: newCatForm.sort_order });
+    setSaving(false);
+    if (r.success) { flash("ok", "카테고리 추가됨"); setAddingCat(false); setNewCatForm({ name: "", sort_order: 1 }); await reload(); }
+    else flash("err", r.error ?? "실패");
   }
+
+  async function handleUpdateCat(id: string) {
+    if (!editCatForm.name.trim()) return;
+    setSaving(true);
+    const r = await updateCategory(id, { name: editCatForm.name, sort_order: editCatForm.sort_order });
+    setSaving(false);
+    if (r.success) { flash("ok", "수정됨"); setEditingCatId(null); await reload(); }
+    else flash("err", r.error ?? "실패");
+  }
+
+  async function handleDeleteCat(id: string, name: string) {
+    if (!confirm(`"${name}" 카테고리를 삭제하면 하위 채팅방도 모두 삭제됩니다. 계속할까요?`)) return;
+    setSaving(true);
+    const r = await deleteCategory(id);
+    setSaving(false);
+    if (r.success) { flash("ok", "삭제됨"); await reload(); }
+    else flash("err", r.error ?? "실패");
+  }
+
+  // ── 방 핸들러 ──
+  async function handleAddRoom(catId: string) {
+    if (!newRoomForm.title.trim() || !newRoomForm.slug.trim()) return;
+    setSaving(true);
+    const r = await createRoom({ ...newRoomForm, category_id: catId });
+    setSaving(false);
+    if (r.success) { flash("ok", "방 추가됨"); setAddingRoomCatId(null); setNewRoomForm(EMPTY_ROOM); await reload(); }
+    else flash("err", r.error ?? "실패");
+  }
+
+  async function handleUpdateRoom(id: string) {
+    if (!editRoomForm.title.trim() || !editRoomForm.slug.trim()) return;
+    setSaving(true);
+    const r = await updateRoom(id, editRoomForm);
+    setSaving(false);
+    if (r.success) { flash("ok", "수정됨"); setEditingRoomId(null); await reload(); }
+    else flash("err", r.error ?? "실패");
+  }
+
+  async function handleDeleteRoom(id: string, title: string) {
+    if (!confirm(`"${title}" 채팅방을 삭제할까요? 기존 채팅 메시지는 유지됩니다.`)) return;
+    setSaving(true);
+    const r = await deleteRoom(id);
+    setSaving(false);
+    if (r.success) { flash("ok", "삭제됨"); await reload(); }
+    else flash("err", r.error ?? "실패");
+  }
+
+  if (dataLoading) return <div className="py-16 text-center text-sm text-[#8c8070]">로딩 중...</div>;
 
   return (
-    <div>
-      <h2 className="text-sm font-black uppercase tracking-widest mb-6">토론방 주제 게시글</h2>
-      <p className="text-xs text-[#8c8070] mb-6">각 토론방 채팅창 상단에 표시되는 주제 게시글을 관리합니다. 방 당 1개씩 등록/수정할 수 있습니다.</p>
-      <div className="space-y-6">
-        {ROOMS.map((room) => {
-          const existing = posts[room.slug];
-          const f = forms[room.slug] ?? { title: "", content: "" };
-          const m = msg[room.slug];
-          return (
-            <div key={room.slug} className="border-2 border-[#1c1712]">
-              {/* 방 헤더 */}
-              <div className="bg-[#1c1712] text-[#f0e5c0] px-4 py-2.5 flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <span>{room.icon}</span>
-                  <span className="font-black text-sm">{room.title} 토론방</span>
-                  <span className="text-[10px] text-[#c8b890] font-mono">/{room.slug}</span>
-                </div>
-                {existing && (
-                  <span className="text-[10px] text-[#c8b890]">
-                    최종 수정: {new Date(existing.updated_at).toLocaleDateString("ko-KR")}
-                  </span>
-                )}
-              </div>
+    <div className="max-w-3xl">
+      <div className="flex items-center justify-between mb-6">
+        <h2 className="text-sm font-black uppercase tracking-widest">토론방 관리</h2>
+        <button
+          onClick={() => { setAddingCat(true); setEditingCatId(null); }}
+          disabled={addingCat}
+          className="text-xs border-2 border-[#1c1712] bg-[#1c1712] text-[#f0e5c0] px-4 py-1.5 font-bold hover:bg-[#3d2b1f] transition-colors disabled:opacity-50"
+        >
+          + 카테고리 추가
+        </button>
+      </div>
 
-              {/* 폼 */}
-              <div className="p-4 space-y-3">
-                {m && (
-                  <div className={`border p-2 text-xs font-medium ${m.type === "ok" ? "border-green-600 bg-green-50 text-green-800" : "border-red-500 bg-red-50 text-red-700"}`}>
-                    {m.text}
-                  </div>
-                )}
-                <div>
-                  <label className="text-[10px] font-black uppercase tracking-widest text-[#6b6356] block mb-1">제목</label>
+      {globalMsg && (
+        <div className={`border-2 p-3 mb-4 text-sm font-medium ${globalMsg.type === "ok" ? "border-green-700 bg-green-50 text-green-800" : "border-red-700 bg-red-50 text-red-800"}`}>
+          {globalMsg.text}
+        </div>
+      )}
+
+      {/* 카테고리 추가 폼 */}
+      {addingCat && (
+        <div className="border-2 border-[#1c1712] p-4 mb-4 space-y-3">
+          <p className="text-[10px] font-black uppercase tracking-widest text-[#6b6356]">새 카테고리</p>
+          <div className="flex gap-2">
+            <input
+              value={newCatForm.name}
+              onChange={(e) => setNewCatForm({ ...newCatForm, name: e.target.value })}
+              placeholder="카테고리 이름"
+              className="flex-1 border-2 border-[#c8bfa8] bg-[#f5f0e8] px-3 py-2 text-sm font-bold"
+            />
+            <input
+              type="number"
+              value={newCatForm.sort_order}
+              onChange={(e) => setNewCatForm({ ...newCatForm, sort_order: Number(e.target.value) })}
+              placeholder="순서"
+              className="w-20 border-2 border-[#c8bfa8] bg-[#f5f0e8] px-3 py-2 text-sm text-center"
+            />
+          </div>
+          <div className="flex gap-2">
+            <button onClick={handleAddCat} disabled={saving} className="border-2 border-[#1c1712] bg-[#1c1712] text-[#f0e5c0] px-4 py-1.5 text-sm font-bold disabled:opacity-50">
+              {saving ? "저장 중..." : "추가"}
+            </button>
+            <button onClick={() => setAddingCat(false)} className="border-2 border-[#c8bfa8] px-4 py-1.5 text-sm hover:border-[#1c1712]">취소</button>
+          </div>
+        </div>
+      )}
+
+      {categories.length === 0 && !addingCat && (
+        <div className="border-2 border-[#c8bfa8] py-16 text-center text-sm text-[#8c8070]">
+          카테고리가 없습니다. 먼저 카테고리를 추가해주세요.
+        </div>
+      )}
+
+      {/* 카테고리 목록 */}
+      <div className="space-y-6">
+        {categories.map((cat) => (
+          <div key={cat.id} className="border-2 border-[#1c1712]">
+            {/* 카테고리 헤더 */}
+            <div className="bg-[#1c1712] text-[#f0e5c0] px-4 py-2.5 flex items-center justify-between">
+              {editingCatId === cat.id ? (
+                <div className="flex items-center gap-2 flex-1">
                   <input
-                    value={f.title}
-                    onChange={(e) => setForm(room.slug, { title: e.target.value })}
-                    maxLength={200}
-                    placeholder="토론 주제 제목"
-                    className="w-full border-2 border-[#c8bfa8] bg-[#f5f0e8] px-3 py-2 text-sm font-bold"
+                    value={editCatForm.name}
+                    onChange={(e) => setEditCatForm({ ...editCatForm, name: e.target.value })}
+                    className="flex-1 bg-[#3d2b1f] border border-[#c8b890] px-2 py-1 text-sm font-bold text-[#f0e5c0]"
                   />
-                </div>
-                <div>
-                  <label className="text-[10px] font-black uppercase tracking-widest text-[#6b6356] block mb-1">내용</label>
-                  <textarea
-                    value={f.content}
-                    onChange={(e) => setForm(room.slug, { content: e.target.value })}
-                    maxLength={2000}
-                    rows={4}
-                    placeholder="토론 주제 설명, 배경 정보 등을 입력하세요"
-                    className="w-full border-2 border-[#c8bfa8] bg-[#f5f0e8] px-3 py-2 text-sm leading-relaxed resize-none"
+                  <input
+                    type="number"
+                    value={editCatForm.sort_order}
+                    onChange={(e) => setEditCatForm({ ...editCatForm, sort_order: Number(e.target.value) })}
+                    className="w-16 bg-[#3d2b1f] border border-[#c8b890] px-2 py-1 text-sm text-center text-[#f0e5c0]"
                   />
-                  <p className="text-[10px] text-[#a09080] mt-0.5 text-right">{f.content.length}/2000</p>
+                  <button onClick={() => handleUpdateCat(cat.id)} disabled={saving} className="text-xs border border-[#c8b890] px-3 py-1 hover:bg-[#3d2b1f] disabled:opacity-50">저장</button>
+                  <button onClick={() => setEditingCatId(null)} className="text-xs border border-[#c8b890] px-3 py-1 hover:bg-[#3d2b1f]">취소</button>
                 </div>
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => handleSave(room.slug)}
-                    disabled={saving === room.slug}
-                    className="border-2 border-[#1c1712] bg-[#1c1712] text-[#f0e5c0] px-5 py-2 text-sm font-bold hover:bg-[#3d2b1f] transition-colors disabled:opacity-50"
-                  >
-                    {saving === room.slug ? "저장 중..." : existing ? "수정 저장" : "등록"}
-                  </button>
-                  {existing && (
+              ) : (
+                <>
+                  <div className="flex items-center gap-2">
+                    <span className="font-black text-sm">{cat.name}</span>
+                    <span className="text-[10px] text-[#c8b890]">순서 {cat.sort_order} · {cat.rooms.length}개 방</span>
+                  </div>
+                  <div className="flex gap-2">
                     <button
-                      onClick={() => handleDelete(room.slug)}
-                      disabled={deleting === room.slug}
-                      className="border-2 border-red-400 text-red-600 px-4 py-2 text-sm hover:bg-red-50 transition-colors disabled:opacity-50"
-                    >
-                      {deleting === room.slug ? "..." : "삭제"}
-                    </button>
-                  )}
-                  {existing && (
-                    <a
-                      href={`/rooms/${room.slug}`}
-                      target="_blank"
-                      className="border-2 border-[#c8bfa8] px-4 py-2 text-sm hover:border-[#1c1712] transition-colors"
-                    >
-                      미리보기 →
-                    </a>
+                      onClick={() => { setEditingCatId(cat.id); setEditCatForm({ name: cat.name, sort_order: cat.sort_order }); }}
+                      className="text-xs border border-[#c8b890] px-3 py-1 hover:bg-[#3d2b1f] transition-colors"
+                    >수정</button>
+                    <button
+                      onClick={() => handleDeleteCat(cat.id, cat.name)}
+                      className="text-xs border border-red-400 text-red-300 px-3 py-1 hover:bg-red-900/30 transition-colors"
+                    >삭제</button>
+                  </div>
+                </>
+              )}
+            </div>
+
+            {/* 방 목록 */}
+            <div className="divide-y divide-[#e8e0d0]">
+              {cat.rooms.map((room) => (
+                <div key={room.id} className="p-4">
+                  {editingRoomId === room.id ? (
+                    <RoomForm
+                      form={editRoomForm}
+                      onChange={setEditRoomForm}
+                      categories={categories}
+                      onSave={() => handleUpdateRoom(room.id)}
+                      onCancel={() => setEditingRoomId(null)}
+                      saving={saving}
+                      saveLabel="수정 저장"
+                    />
+                  ) : (
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="flex items-start gap-3 min-w-0">
+                        <span className="text-xl shrink-0">{room.icon ?? "💬"}</span>
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="font-black text-sm">{room.title}</span>
+                            <span className="text-[10px] font-mono text-[#8c8070] bg-[#f0ece4] px-1.5 py-0.5">/{room.slug}</span>
+                            <span className="text-[10px] text-[#a09080]">순서 {room.sort_order}</span>
+                            {room.post_title && <span className="text-[9px] border border-[#4d9ab5] text-[#4d9ab5] px-1.5 py-0.5">게시글 있음</span>}
+                          </div>
+                          {room.description && <p className="text-xs text-[#8c8070] mt-0.5 truncate">{room.description}</p>}
+                        </div>
+                      </div>
+                      <div className="flex gap-2 shrink-0">
+                        <a href={`/rooms/${room.slug}`} target="_blank" className="text-xs border border-[#c8bfa8] px-3 py-1 hover:border-[#1c1712] transition-colors">보기</a>
+                        <button
+                          onClick={() => {
+                            setEditingRoomId(room.id);
+                            setEditRoomForm({
+                              category_id: room.category_id,
+                              title: room.title,
+                              description: room.description ?? "",
+                              slug: room.slug,
+                              icon: room.icon ?? "💬",
+                              sort_order: room.sort_order,
+                              post_title: room.post_title ?? "",
+                              post_content: room.post_content ?? "",
+                            });
+                            setAddingRoomCatId(null);
+                          }}
+                          className="text-xs border border-[#c8bfa8] px-3 py-1 hover:border-[#1c1712] transition-colors"
+                        >수정</button>
+                        <button onClick={() => handleDeleteRoom(room.id, room.title)} className="text-xs border border-red-400 text-red-600 px-3 py-1 hover:bg-red-50 transition-colors">삭제</button>
+                      </div>
+                    </div>
                   )}
                 </div>
-              </div>
+              ))}
+
+              {/* 방 추가 */}
+              {addingRoomCatId === cat.id ? (
+                <div className="p-4 bg-[#fdf8f0]">
+                  <p className="text-[10px] font-black uppercase tracking-widest text-[#6b6356] mb-3">새 채팅방 추가</p>
+                  <RoomForm
+                    form={{ ...newRoomForm, category_id: cat.id }}
+                    onChange={setNewRoomForm}
+                    categories={categories}
+                    onSave={() => handleAddRoom(cat.id)}
+                    onCancel={() => { setAddingRoomCatId(null); setNewRoomForm(EMPTY_ROOM); }}
+                    saving={saving}
+                    saveLabel="추가"
+                  />
+                </div>
+              ) : (
+                <div className="px-4 py-2">
+                  <button
+                    onClick={() => { setAddingRoomCatId(cat.id); setNewRoomForm({ ...EMPTY_ROOM, category_id: cat.id }); setEditingRoomId(null); }}
+                    className="text-xs text-[#8c8070] hover:text-[#1c1712] transition-colors font-bold"
+                  >
+                    + 방 추가
+                  </button>
+                </div>
+              )}
             </div>
-          );
-        })}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function RoomForm({
+  form, onChange, categories, onSave, onCancel, saving, saveLabel,
+}: {
+  form: RoomInput;
+  onChange: (v: RoomInput) => void;
+  categories: CatWithRooms[];
+  onSave: () => void;
+  onCancel: () => void;
+  saving: boolean;
+  saveLabel: string;
+}) {
+  const [showPost, setShowPost] = useState(!!(form.post_title || form.post_content));
+
+  return (
+    <div className="space-y-3">
+      <div className="grid grid-cols-2 gap-3">
+        <div>
+          <label className="text-[10px] font-black uppercase tracking-widest text-[#6b6356] block mb-1">제목 *</label>
+          <input value={form.title} onChange={(e) => onChange({ ...form, title: e.target.value })} placeholder="주식" maxLength={50} className="w-full border-2 border-[#c8bfa8] bg-[#f5f0e8] px-3 py-2 text-sm font-bold" />
+        </div>
+        <div>
+          <label className="text-[10px] font-black uppercase tracking-widest text-[#6b6356] block mb-1">슬러그 * (URL)</label>
+          <input value={form.slug} onChange={(e) => onChange({ ...form, slug: e.target.value.replace(/[^a-z0-9-]/g, "") })} placeholder="stocks" maxLength={50} className="w-full border-2 border-[#c8bfa8] bg-[#f5f0e8] px-3 py-2 text-sm font-mono" />
+        </div>
+        <div>
+          <label className="text-[10px] font-black uppercase tracking-widest text-[#6b6356] block mb-1">아이콘 (이모지)</label>
+          <input value={form.icon ?? ""} onChange={(e) => onChange({ ...form, icon: e.target.value })} placeholder="📈" maxLength={4} className="w-full border-2 border-[#c8bfa8] bg-[#f5f0e8] px-3 py-2 text-sm text-center" />
+        </div>
+        <div>
+          <label className="text-[10px] font-black uppercase tracking-widest text-[#6b6356] block mb-1">순서</label>
+          <input type="number" value={form.sort_order ?? 0} onChange={(e) => onChange({ ...form, sort_order: Number(e.target.value) })} className="w-full border-2 border-[#c8bfa8] bg-[#f5f0e8] px-3 py-2 text-sm text-center" />
+        </div>
+      </div>
+      <div>
+        <label className="text-[10px] font-black uppercase tracking-widest text-[#6b6356] block mb-1">설명</label>
+        <input value={form.description ?? ""} onChange={(e) => onChange({ ...form, description: e.target.value })} placeholder="방 설명" maxLength={200} className="w-full border-2 border-[#c8bfa8] bg-[#f5f0e8] px-3 py-2 text-sm" />
+      </div>
+      <div>
+        <label className="text-[10px] font-black uppercase tracking-widest text-[#6b6356] block mb-1">카테고리</label>
+        <select value={form.category_id} onChange={(e) => onChange({ ...form, category_id: e.target.value })} className="w-full border-2 border-[#c8bfa8] bg-[#f5f0e8] px-3 py-2 text-sm">
+          {categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+        </select>
+      </div>
+
+      {/* 주제 게시글 (접기/펼치기) */}
+      <div className="border-t border-[#e8e0d0] pt-3">
+        <button type="button" onClick={() => setShowPost((v) => !v)} className="text-[10px] font-black uppercase tracking-widest text-[#6b6356] flex items-center gap-1">
+          {showPost ? "▲" : "▼"} 주제 게시글 {showPost ? "접기" : "설정 (선택)"}
+        </button>
+        {showPost && (
+          <div className="mt-3 space-y-2">
+            <input value={form.post_title ?? ""} onChange={(e) => onChange({ ...form, post_title: e.target.value })} placeholder="게시글 제목" maxLength={200} className="w-full border-2 border-[#c8bfa8] bg-[#f5f0e8] px-3 py-2 text-sm font-bold" />
+            <textarea value={form.post_content ?? ""} onChange={(e) => onChange({ ...form, post_content: e.target.value })} placeholder="게시글 내용" rows={4} maxLength={2000} className="w-full border-2 border-[#c8bfa8] bg-[#f5f0e8] px-3 py-2 text-sm leading-relaxed resize-none" />
+          </div>
+        )}
+      </div>
+
+      <div className="flex gap-2 pt-1">
+        <button onClick={onSave} disabled={saving || !form.title.trim() || !form.slug.trim()} className="border-2 border-[#1c1712] bg-[#1c1712] text-[#f0e5c0] px-5 py-2 text-sm font-bold hover:bg-[#3d2b1f] disabled:opacity-50 transition-colors">
+          {saving ? "저장 중..." : saveLabel}
+        </button>
+        <button onClick={onCancel} className="border-2 border-[#c8bfa8] px-4 py-2 text-sm hover:border-[#1c1712] transition-colors">취소</button>
       </div>
     </div>
   );

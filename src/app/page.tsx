@@ -6,7 +6,7 @@ import VoteCard from "@/components/VoteCard";
 import Sidebar from "@/components/Sidebar";
 import Link from "next/link";
 import { Poll } from "@/types";
-import { ROOMS } from "@/lib/rooms";
+import { Room } from "@/lib/rooms";
 
 interface Props {
   searchParams: Promise<{ category?: string }>;
@@ -37,7 +37,11 @@ export default async function HomePage({ searchParams }: Props) {
     query = query.eq("category", category);
   }
 
-  const { data: rawPolls } = await query;
+  const [{ data: rawPolls }, { data: rawRooms }] = await Promise.all([
+    query,
+    supabase.from("rooms").select("id, title, description, slug, icon, sort_order").order("sort_order", { ascending: true }).limit(8),
+  ]);
+  const rooms = (rawRooms ?? []) as Pick<Room, "id" | "title" | "description" | "slug" | "icon" | "sort_order">[];
 
   const polls: Poll[] = (rawPolls ?? []).map((p) => ({
     ...p,
@@ -156,13 +160,13 @@ export default async function HomePage({ searchParams }: Props) {
                   </span>
                 </div>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-0 border-2 border-[#1c1712] divide-x-2 divide-[#1c1712]">
-                  {ROOMS.map((room) => (
+                  {rooms.map((room) => (
                     <Link
                       key={room.slug}
                       href={`/rooms/${room.slug}`}
                       className="group block p-4 hover:bg-black/[0.04] transition-colors"
                     >
-                      <div className="text-2xl mb-2">{room.icon}</div>
+                      <div className="text-2xl mb-2">{room.icon ?? "💬"}</div>
                       <div className="text-sm font-black font-serif group-hover:underline mb-1">
                         {room.title}
                       </div>

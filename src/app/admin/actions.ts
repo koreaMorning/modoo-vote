@@ -154,6 +154,108 @@ export async function getRoomPosts(): Promise<RoomPost[]> {
   return (data ?? []) as RoomPost[];
 }
 
+/* ─────────────────── 토론방 카테고리 & 방 관리 ─────────────────── */
+
+export interface CategoryInput { name: string; sort_order: number; }
+
+export interface CategoryRow { id: string; name: string; sort_order: number; }
+
+export interface RoomRow {
+  id: string; category_id: string; title: string; description: string | null;
+  slug: string; icon: string | null; post_title: string | null;
+  post_content: string | null; post_updated_at: string | null;
+  sort_order: number; created_at: string;
+}
+
+export interface RoomInput {
+  category_id: string; title: string; description?: string;
+  slug: string; icon?: string; sort_order?: number;
+  post_title?: string; post_content?: string;
+}
+
+export async function getCategoriesWithRooms(): Promise<(CategoryRow & { rooms: RoomRow[] })[]> {
+  const supabase = await createClient();
+  const [{ data: cats }, { data: rms }] = await Promise.all([
+    supabase.from("room_categories").select("*").order("sort_order", { ascending: true }),
+    supabase.from("rooms").select("*").order("sort_order", { ascending: true }),
+  ]);
+  return (cats ?? []).map((cat) => ({
+    ...cat,
+    rooms: (rms ?? []).filter((r) => r.category_id === cat.id) as RoomRow[],
+  }));
+}
+
+export async function createCategory(data: CategoryInput): Promise<{ success: boolean; error?: string }> {
+  const supabase = await createClient();
+  const { error } = await supabase.from("room_categories").insert({ name: data.name.trim(), sort_order: data.sort_order });
+  if (error) return { success: false, error: error.message };
+  revalidatePath("/rooms");
+  return { success: true };
+}
+
+export async function updateCategory(id: string, data: CategoryInput): Promise<{ success: boolean; error?: string }> {
+  const supabase = await createClient();
+  const { error } = await supabase.from("room_categories").update({ name: data.name.trim(), sort_order: data.sort_order }).eq("id", id);
+  if (error) return { success: false, error: error.message };
+  revalidatePath("/rooms");
+  return { success: true };
+}
+
+export async function deleteCategory(id: string): Promise<{ success: boolean; error?: string }> {
+  const supabase = await createClient();
+  const { error } = await supabase.from("room_categories").delete().eq("id", id);
+  if (error) return { success: false, error: error.message };
+  revalidatePath("/rooms");
+  return { success: true };
+}
+
+export async function createRoom(data: RoomInput): Promise<{ success: boolean; error?: string }> {
+  const supabase = await createClient();
+  const hasPost = !!(data.post_title?.trim() || data.post_content?.trim());
+  const { error } = await supabase.from("rooms").insert({
+    category_id: data.category_id,
+    title: data.title.trim(),
+    description: data.description?.trim() || null,
+    slug: data.slug.trim(),
+    icon: data.icon?.trim() || "💬",
+    sort_order: data.sort_order ?? 0,
+    post_title: data.post_title?.trim() || null,
+    post_content: data.post_content?.trim() || null,
+    post_updated_at: hasPost ? new Date().toISOString() : null,
+  });
+  if (error) return { success: false, error: error.message };
+  revalidatePath("/rooms");
+  return { success: true };
+}
+
+export async function updateRoom(id: string, data: RoomInput): Promise<{ success: boolean; error?: string }> {
+  const supabase = await createClient();
+  const hasPost = !!(data.post_title?.trim() || data.post_content?.trim());
+  const { error } = await supabase.from("rooms").update({
+    category_id: data.category_id,
+    title: data.title.trim(),
+    description: data.description?.trim() || null,
+    slug: data.slug.trim(),
+    icon: data.icon?.trim() || "💬",
+    sort_order: data.sort_order ?? 0,
+    post_title: data.post_title?.trim() || null,
+    post_content: data.post_content?.trim() || null,
+    post_updated_at: hasPost ? new Date().toISOString() : null,
+  }).eq("id", id);
+  if (error) return { success: false, error: error.message };
+  revalidatePath("/rooms");
+  revalidatePath(`/rooms/${data.slug}`);
+  return { success: true };
+}
+
+export async function deleteRoom(id: string): Promise<{ success: boolean; error?: string }> {
+  const supabase = await createClient();
+  const { error } = await supabase.from("rooms").delete().eq("id", id);
+  if (error) return { success: false, error: error.message };
+  revalidatePath("/rooms");
+  return { success: true };
+}
+
 export async function getPolls() {
   const supabase = await createClient();
   const { data, error } = await supabase

@@ -6,6 +6,8 @@ import { ArrowLeft, Send, Users } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { Room } from '@/lib/rooms';
 
+/* Room 타입은 lib/rooms.ts에서 import (DB 스키마 기반) */
+
 const CHAT_FP_KEY    = 'modoo-chat-fp';
 const NICKNAME_KEY   = 'modoo-chat-nickname';
 const stanceKey = (slug: string) => `modoo-room-stance-${slug}`;
@@ -54,15 +56,7 @@ interface ChatMsg {
   created_at: string;
 }
 
-interface RoomPost {
-  id: string;
-  room_slug: string;
-  title: string;
-  content: string;
-  updated_at: string;
-}
-
-export default function RoomClient({ room, post }: { room: Room; post: RoomPost | null }) {
+export default function RoomClient({ room }: { room: Room }) {
   const [msgs, setMsgs]             = useState<ChatMsg[]>([]);
   const [text, setText]             = useState('');
   const [stance, setStance]         = useState<'pro' | 'con' | null>(null);
@@ -203,9 +197,9 @@ export default function RoomClient({ room, post }: { room: Room; post: RoomPost 
             <ArrowLeft size={12} /> 토론방
           </Link>
           <span className="text-[#c8bfa8] text-xs">·</span>
-          <span className="text-xl leading-none">{room.icon}</span>
+          <span className="text-xl leading-none">{room.icon ?? '💬'}</span>
           <h1 className="text-lg font-black font-serif leading-none">{room.title}</h1>
-          <span className="text-xs text-[#8c8070] hidden sm:block">— {room.description}</span>
+          {room.description && <span className="text-xs text-[#8c8070] hidden sm:block">— {room.description}</span>}
         </div>
 
         {/* 찬반 비율 바 */}
@@ -224,8 +218,12 @@ export default function RoomClient({ room, post }: { room: Room; post: RoomPost 
       </div>
 
       {/* ── 주제 게시글 ── */}
-      {post && (
-        <RoomPostBanner post={post} />
+      {room.post_title && room.post_content && (
+        <RoomPostBanner
+          title={room.post_title}
+          content={room.post_content}
+          updatedAt={room.post_updated_at ?? room.created_at}
+        />
       )}
 
       {/* ── 좌우 분할 채팅 ── */}
@@ -454,29 +452,25 @@ export default function RoomClient({ room, post }: { room: Room; post: RoomPost 
 }
 
 /* ── 주제 게시글 배너 ── */
-const RoomPostBanner = memo(function RoomPostBanner({ post }: { post: { title: string; content: string; updated_at: string } }) {
+const RoomPostBanner = memo(function RoomPostBanner({
+  title, content, updatedAt,
+}: { title: string; content: string; updatedAt: string }) {
   const [expanded, setExpanded] = useState(false);
 
   return (
     <div className="border-x border-b border-[#d4cfc4] bg-[#fdf8f0] shrink-0">
-      {/* 게시글 헤더 */}
       <div className="flex items-center justify-between px-3 py-1.5 bg-[#1c1712]/5 border-b border-[#d4cfc4]">
         <span className="text-[9px] font-black tracking-widest uppercase text-[#8c8070]">주제 게시글</span>
         <span className="text-[9px] text-[#a09080]">
-          {new Date(post.updated_at).toLocaleDateString('ko-KR', { month: 'long', day: 'numeric' })}
+          {new Date(updatedAt).toLocaleDateString('ko-KR', { month: 'long', day: 'numeric' })}
         </span>
       </div>
-      {/* 제목 */}
       <div className="px-3 pt-2 pb-1">
-        <p className="text-[13px] font-black font-serif leading-snug text-[#1c1712]">{post.title}</p>
+        <p className="text-[13px] font-black font-serif leading-snug text-[#1c1712]">{title}</p>
       </div>
-      {/* 내용 */}
-      <div
-        className={`px-3 pb-2 overflow-hidden transition-all duration-300 ${expanded ? '' : 'max-h-[52px]'}`}
-      >
-        <p className="text-[11px] text-[#4a4035] leading-relaxed whitespace-pre-wrap">{post.content}</p>
+      <div className={`px-3 pb-2 overflow-hidden transition-all duration-300 ${expanded ? '' : 'max-h-[52px]'}`}>
+        <p className="text-[11px] text-[#4a4035] leading-relaxed whitespace-pre-wrap">{content}</p>
       </div>
-      {/* 더보기 버튼 */}
       <button
         onClick={() => setExpanded((v) => !v)}
         className="w-full text-[9px] font-bold text-[#8c8070] hover:text-[#1c1712] py-1 border-t border-[#d4cfc4] transition-colors tracking-widest"
