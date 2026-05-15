@@ -306,7 +306,7 @@ export default function CalendarClient() {
                 {/* 메모 미리보기 */}
                 {hasMemo && (
                   <span
-                    className="text-[7px] leading-tight px-0.5 w-full overflow-hidden mt-auto text-[#5a5040]"
+                    className="text-[8px] leading-tight px-0.5 w-full overflow-hidden mt-auto text-[#5a5040]"
                     style={{
                       display: "-webkit-box",
                       WebkitLineClamp: 2,
