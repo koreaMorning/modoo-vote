@@ -1,6 +1,5 @@
 import { notFound } from 'next/navigation';
 import Header from '@/components/Header';
-import Footer from '@/components/Footer';
 import { getRoomBySlug } from '@/lib/rooms';
 import RoomClient from './RoomClient';
 
@@ -16,10 +15,9 @@ export default async function RoomPage({ params }: Props) {
   return (
     <div className="min-h-screen flex flex-col text-[#1c1712]">
       <Header />
-      <main className="flex-1 max-w-5xl mx-auto w-full px-4 py-8">
+      <main className="flex-1 max-w-3xl mx-auto w-full px-4 pt-2 pb-4">
         <RoomClient room={room} />
       </main>
-      <Footer />
     </div>
   );
 }

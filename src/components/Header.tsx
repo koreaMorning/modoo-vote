@@ -57,6 +57,12 @@ export default function Header() {
           >
             OTT 편성표
           </Link>
+          <Link
+            href="/rooms"
+            className="px-4 py-1 text-sm font-bold hover:bg-[#1c1712] hover:text-[#fdf8f0] transition-colors text-[#1c1712] border-l-2 border-[#1c1712] ml-1"
+          >
+            토론방
+          </Link>
         </nav>
       </div>
     </header>
