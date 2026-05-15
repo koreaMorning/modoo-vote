@@ -176,7 +176,7 @@ export default function RoomClient({ room }: { room: Room }) {
       <div className="flex-1 flex border border-[#d4cfc4] overflow-hidden min-h-0">
 
         {/* 찬성 컬럼 */}
-        <div className="flex-1 flex flex-col min-w-0 border-r-2 border-[#1c1712]">
+        <div className="flex-1 flex flex-col min-w-0 border-r border-[#d4cfc4]">
           {/* 컬럼 헤더 */}
           <div className="bg-[#c4873a] text-white px-3 py-2 text-[11px] font-black tracking-widest shrink-0 flex items-center justify-between">
             <span>▲ 찬성</span>
@@ -264,7 +264,7 @@ export default function RoomClient({ room }: { room: Room }) {
       {/* ── 진영 선택 or 입력창 ── */}
       {stance === null ? (
         /* 진영 미선택: 선택 화면 */
-        <div className="border border-t-0 border-[#1c1712] bg-[#fdf8f0] px-4 py-4 shrink-0">
+        <div className="border-x border-b border-[#d4cfc4] bg-white px-4 py-4 shrink-0">
           <p className="text-[11px] font-black tracking-widest text-center text-[#6b6356] mb-3 uppercase">
             먼저 진영을 선택하세요
           </p>
@@ -288,7 +288,7 @@ export default function RoomClient({ room }: { room: Room }) {
         </div>
       ) : (
         /* 진영 선택 완료: 입력창 */
-        <div className="border border-t-0 border-[#1c1712] bg-[#fdf8f0] flex items-center gap-2 px-3 py-2 shrink-0">
+        <div className="border-x border-b border-[#d4cfc4] bg-white flex items-center gap-2 px-3 py-2 shrink-0">
           {/* 진영 드롭업 버튼 */}
           <div ref={stanceMenuRef} className="relative shrink-0">
             <button
@@ -308,7 +308,7 @@ export default function RoomClient({ room }: { room: Room }) {
                   className={`flex w-full items-center gap-1.5 px-3 py-2 text-[11px] font-black transition-colors ${
                     stance === 'pro'
                       ? 'bg-[#c4873a] text-white'
-                      : 'bg-[#fdf8f0] text-[#8c4a00] hover:bg-[#c4873a]/15'
+                      : 'bg-white text-[#8c4a00] hover:bg-[#c4873a]/15'
                   }`}
                 >
                   ▲ 찬성
@@ -320,7 +320,7 @@ export default function RoomClient({ room }: { room: Room }) {
                   className={`flex w-full items-center gap-1.5 px-3 py-2 text-[11px] font-black transition-colors ${
                     stance === 'con'
                       ? 'bg-[#3a5080] text-white'
-                      : 'bg-[#fdf8f0] text-[#2a3a5a] hover:bg-[#3a5080]/15'
+                      : 'bg-white text-[#2a3a5a] hover:bg-[#3a5080]/15'
                   }`}
                 >
                   ▼ 반대
