@@ -71,6 +71,7 @@ export default function RoomClient({ room, post }: { room: Room; post: RoomPost 
   const [nicknameInput, setNicknameInput] = useState('');
   const [loading, setLoading]       = useState(true);
   const [sending, setSending]       = useState(false);
+  const [confirming, setConfirming] = useState(false);
   const [stanceOpen, setStanceOpen] = useState(false);
   const proBottomRef            = useRef<HTMLDivElement>(null);
   const conBottomRef            = useRef<HTMLDivElement>(null);
@@ -97,11 +98,30 @@ export default function RoomClient({ room, post }: { room: Room; post: RoomPost 
     setNicknameInput(saved);
   }, [room.slug]);
 
-  function confirmNickname() {
+  async function confirmNickname() {
     const name = nicknameInput.trim();
-    if (!name) return;
-    saveNickname(name);
-    setNickname(name);
+    if (!name || confirming) return;
+    setConfirming(true);
+
+    // 같은 방에서 다른 사람이 이미 쓰는 닉네임인지 확인
+    const myFp = fp || getFingerprint();
+    const { data } = await supabase
+      .from('chat_messages')
+      .select('id')
+      .eq('room_slug', room.slug)
+      .eq('nickname', name)
+      .neq('fingerprint', myFp)
+      .limit(1);
+
+    // 중복이면 닉네임#42 형태로 변환
+    const finalName = data && data.length > 0
+      ? `${name}#${Math.floor(Math.random() * 90 + 10)}`
+      : name;
+
+    saveNickname(finalName);
+    setNickname(finalName);
+    setNicknameInput(finalName);
+    setConfirming(false);
   }
 
   function chooseStance(s: 'pro' | 'con') {
@@ -321,10 +341,10 @@ export default function RoomClient({ room, post }: { room: Room; post: RoomPost 
             />
             <button
               onClick={confirmNickname}
-              disabled={!nicknameInput.trim()}
+              disabled={!nicknameInput.trim() || confirming}
               className="px-4 py-2 bg-[#1c1712] text-[#fdf8f0] text-xs font-black hover:opacity-80 disabled:opacity-35 transition-opacity shrink-0"
             >
-              확인
+              {confirming ? '확인 중...' : '확인'}
             </button>
           </div>
           <p className="text-[9px] text-[#a09080] text-center mt-2">
