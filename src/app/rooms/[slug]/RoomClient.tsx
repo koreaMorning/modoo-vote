@@ -51,9 +51,23 @@ export default function RoomClient({ room }: { room: Room }) {
   const [fp, setFp]           = useState('');
   const [loading, setLoading] = useState(true);
   const [sending, setSending]   = useState(false);
+  const [stanceOpen, setStanceOpen] = useState(false);
   const proBottomRef            = useRef<HTMLDivElement>(null);
   const conBottomRef            = useRef<HTMLDivElement>(null);
+  const stanceMenuRef           = useRef<HTMLDivElement>(null);
   const supabase                = createClient();
+
+  // 드롭업 외부 클릭 시 닫기
+  useEffect(() => {
+    if (!stanceOpen) return;
+    function onOutside(e: MouseEvent) {
+      if (stanceMenuRef.current && !stanceMenuRef.current.contains(e.target as Node)) {
+        setStanceOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', onOutside);
+    return () => document.removeEventListener('mousedown', onOutside);
+  }, [stanceOpen]);
 
   useEffect(() => {
     setFp(getFingerprint());
@@ -269,20 +283,52 @@ export default function RoomClient({ room }: { room: Room }) {
             </button>
           </div>
           <p className="text-[9px] text-[#a09080] text-center mt-2">
-            선택 후 변경할 수 없습니다
+            입력창 버튼으로 언제든 변경할 수 있습니다
           </p>
         </div>
       ) : (
         /* 진영 선택 완료: 입력창 */
         <div className="border border-t-0 border-[#1c1712] bg-[#fdf8f0] flex items-center gap-2 px-3 py-2 shrink-0">
-          {/* 고정된 진영 배지 */}
-          <span
-            className={`shrink-0 text-[10px] font-black px-2 py-1.5 text-white ${
-              stance === 'pro' ? 'bg-[#c4873a]' : 'bg-[#3a5080]'
-            }`}
-          >
-            {stance === 'pro' ? '▲찬성' : '▼반대'}
-          </span>
+          {/* 진영 드롭업 버튼 */}
+          <div ref={stanceMenuRef} className="relative shrink-0">
+            <button
+              onClick={() => setStanceOpen(v => !v)}
+              className={`text-[10px] font-black px-2.5 py-1.5 text-white flex items-center gap-1 transition-opacity hover:opacity-85 ${
+                stance === 'pro' ? 'bg-[#c4873a]' : 'bg-[#3a5080]'
+              }`}
+            >
+              {stance === 'pro' ? '▲찬성' : '▼반대'}
+              <span className={`text-[6px] ml-0.5 transition-transform ${stanceOpen ? 'rotate-180' : ''}`}>▲</span>
+            </button>
+
+            {stanceOpen && (
+              <div className="absolute bottom-full left-0 mb-1 z-20 border border-[#1c1712] shadow-lg overflow-hidden min-w-[64px]">
+                <button
+                  onClick={() => { chooseStance('pro'); setStanceOpen(false); }}
+                  className={`flex w-full items-center gap-1.5 px-3 py-2 text-[11px] font-black transition-colors ${
+                    stance === 'pro'
+                      ? 'bg-[#c4873a] text-white'
+                      : 'bg-[#fdf8f0] text-[#8c4a00] hover:bg-[#c4873a]/15'
+                  }`}
+                >
+                  ▲ 찬성
+                  {stance === 'pro' && <span className="text-[7px] opacity-60 ml-auto">●</span>}
+                </button>
+                <div className="border-t border-[#d4cfc4]" />
+                <button
+                  onClick={() => { chooseStance('con'); setStanceOpen(false); }}
+                  className={`flex w-full items-center gap-1.5 px-3 py-2 text-[11px] font-black transition-colors ${
+                    stance === 'con'
+                      ? 'bg-[#3a5080] text-white'
+                      : 'bg-[#fdf8f0] text-[#2a3a5a] hover:bg-[#3a5080]/15'
+                  }`}
+                >
+                  ▼ 반대
+                  {stance === 'con' && <span className="text-[7px] opacity-60 ml-auto">●</span>}
+                </button>
+              </div>
+            )}
+          </div>
 
           {/* 텍스트 입력 */}
           <input
