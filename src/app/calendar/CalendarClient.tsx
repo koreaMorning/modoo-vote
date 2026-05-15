@@ -387,7 +387,7 @@ export default function CalendarClient() {
                     )}
                     <button
                       onClick={saveMemo}
-                      className="text-xs px-4 py-1 bg-[#1c1712] text-[#F0EDE6] hover:opacity-80 font-bold"
+                      className="text-xs px-4 py-1 bg-[#1c1712] text-[#fdf8f0] hover:opacity-80 font-bold"
                     >
                       저장
                     </button>
@@ -427,7 +427,7 @@ export default function CalendarClient() {
                     <button
                       onClick={addDday}
                       disabled={!ddayInput.trim()}
-                      className="px-3 py-1 bg-[#1c1712] text-[#F0EDE6] text-xs font-bold hover:opacity-80 disabled:opacity-40 flex items-center gap-1"
+                      className="px-3 py-1 bg-[#1c1712] text-[#fdf8f0] text-xs font-bold hover:opacity-80 disabled:opacity-40 flex items-center gap-1"
                     >
                       <Plus size={12} /> 등록
                     </button>

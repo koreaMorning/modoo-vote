@@ -3,7 +3,7 @@
 @theme inline {
   --font-sans: var(--font-sans);
   --font-serif: var(--font-serif);
-  --color-newsprint: #F0EDE6;
+  --color-newsprint: #fdf8f0;
   --color-ink: #1c1712;
 }
 
@@ -19,7 +19,7 @@
 body {
   font-family: var(--font-sans), "Apple SD Gothic Neo", "맑은 고딕", sans-serif;
   /* aged newsprint base */
-  background-color: #F0EDE6;
+  background-color: #fdf8f0;
   background-image:
     /* fine grain */
     url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23g)' opacity='0.08'/%3E%3C/svg%3E"),
