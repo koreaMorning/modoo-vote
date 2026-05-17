@@ -185,7 +185,7 @@ export default async function HomePage({ searchParams }: Props) {
                 </h1>
                 <hr className="border-t-2 border-[#1c1712] mb-6" />
                 {heroPoll.description && (
-                  <p className="text-lg leading-relaxed text-[#3d3326] max-w-3xl mb-8">
+                  <p className="text-[1rem] font-serif font-normal leading-[1.9] text-[#3d3326] max-w-3xl mb-8">
                     {heroPoll.description}
                   </p>
                 )}
@@ -205,12 +205,12 @@ export default async function HomePage({ searchParams }: Props) {
         {polls.length === 0 ? (
           <div className="text-center py-24 text-gray-400">
             <p className="text-2xl font-serif mb-2">진행 중인 투표가 없습니다</p>
-            <p className="text-sm">곧 새로운 투표가 등록될 예정입니다.</p>
+            <p className="text-sm font-sans">곧 새로운 투표가 등록될 예정입니다.</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-[1fr_280px] gap-6">
             {/* ── Main content ── */}
-            <div className="flex flex-col gap-10">
+            <div className="flex flex-col gap-8">
               {orderedCategories.map((cat) => {
                 const catPolls = pollsByCategory[cat];
                 const headline = catPolls[0];
@@ -218,31 +218,37 @@ export default async function HomePage({ searchParams }: Props) {
                 const mediums = catPolls.slice(3);
                 return (
                   <section key={cat}>
-                    <div className="border-t-4 border-black mb-0">
-                      <span className="text-xs font-bold tracking-widest uppercase bg-black text-white px-2 py-0.5">
+                    {/* 카테고리 섹션 헤더 — 고딕 bold, 두꺼운 상단선 + 얇은 하단선 */}
+                    <div className="border-t-[3px] border-black flex items-center gap-0 mb-0">
+                      <span className="text-[11px] font-black tracking-[0.3em] uppercase font-sans bg-black text-white px-2.5 py-1 leading-none">
                         {cat}
                       </span>
+                      <div className="flex-1 border-b border-[#c8bfa8] self-end" />
                     </div>
-                    <div className="border border-t-0 border-[#1c1712]/25">
-                      {/* 헤드라인: 첫 번째 기사 전체 너비 */}
-                      <div className={(duos.length > 0 || mediums.length > 0) ? "border-b border-[#1c1712]/25" : ""}>
+
+                    {/* 기사 묶음 — 외곽 얇은 선 */}
+                    <div className="border border-t-0 border-[#c8bfa8]">
+                      {/* 헤드라인: 전체 너비 */}
+                      <div className={(duos.length > 0 || mediums.length > 0) ? "border-b border-[#c8bfa8]" : ""}>
                         <VoteCard poll={headline} size="headline" voted={votedPollIds.has(headline.id)} />
                       </div>
-                      {/* 2단: 두 번째~세 번째 기사 */}
+
+                      {/* 2단: 두 번째~세 번째 기사, 1px 세로 구분선 */}
                       {duos.length > 0 && (
-                        <div className={`grid gap-0 ${duos.length >= 2 ? "grid-cols-1 sm:grid-cols-2" : "grid-cols-1"}${mediums.length > 0 ? " border-b border-[#1c1712]/25" : ""}`}>
+                        <div className={`grid gap-0 ${duos.length >= 2 ? "grid-cols-1 sm:grid-cols-2" : "grid-cols-1"}${mediums.length > 0 ? " border-b border-[#c8bfa8]" : ""}`}>
                           {duos.map((poll, i) => (
-                            <div key={poll.id} className={i > 0 ? "border-t sm:border-t-0 sm:border-l border-[#1c1712]/25" : ""}>
+                            <div key={poll.id} className={i > 0 ? "border-t sm:border-t-0 sm:border-l border-[#c8bfa8]" : ""}>
                               <VoteCard poll={poll} size="duo" voted={votedPollIds.has(poll.id)} />
                             </div>
                           ))}
                         </div>
                       )}
-                      {/* 3단: 나머지 기사들 */}
+
+                      {/* 3단: 나머지 기사들, 1px 세로·가로 구분선 */}
                       {mediums.length > 0 && (
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 border-l border-t border-[#1c1712]/25">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 border-l border-t border-[#c8bfa8]">
                           {mediums.map((poll) => (
-                            <div key={poll.id} className="border-r border-b border-[#1c1712]/25">
+                            <div key={poll.id} className="border-r border-b border-[#c8bfa8]">
                               <VoteCard poll={poll} size="medium" voted={votedPollIds.has(poll.id)} />
                             </div>
                           ))}

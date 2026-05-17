@@ -12,7 +12,7 @@ const notoSerifKR = Noto_Serif_KR({
 const notoSansKR = Noto_Sans_KR({
   variable: "--font-sans",
   subsets: ["latin"],
-  weight: ["400", "500", "700"],
+  weight: ["400", "500", "700", "900"],
 });
 
 export const metadata: Metadata = {

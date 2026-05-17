@@ -35,21 +35,22 @@ export default function VoteCard({ poll, size = "medium", voted = false }: Props
   const catColor = categoryColors[poll.category] ?? "bg-[#d8ccb0] text-[#3d3326]";
   const isBreaking = poll.is_breaking ?? false;
 
-  /* ── 헤드라인 (1면 최상단 전체 너비) ── */
+  /* ── 헤드라인 (섹션 최상단 전체 너비) ── */
   if (size === "headline") {
     return (
       <Link href={`/votes/${poll.id}`} className="block group">
-        <article className="p-6 transition-colors hover:bg-black/[0.03]">
-          <div className="flex items-center gap-2 mb-4">
+        <article className="p-6 transition-colors hover:bg-black/[0.02]">
+          {/* 부제/메타 — 고딕체 */}
+          <div className="flex items-center gap-2 mb-3 font-sans">
             {isBreaking && (
               <span className="text-[10px] font-black bg-[#c0100a] text-white px-2 py-0.5 tracking-widest">
                 속보
               </span>
             )}
-            <span className={`text-xs font-bold px-2 py-0.5 ${catColor}`}>
+            <span className={`text-[11px] font-bold px-2 py-0.5 ${catColor}`}>
               {poll.category}
             </span>
-            <span className="text-xs text-[#6b6356] flex items-center gap-1">
+            <span className="text-[11px] text-[#6b6356] flex items-center gap-1">
               <Clock size={11} />
               {daysLeft}
             </span>
@@ -60,15 +61,18 @@ export default function VoteCard({ poll, size = "medium", voted = false }: Props
               </span>
             )}
           </div>
-          <h2 className="text-4xl font-black leading-tight font-serif group-hover:underline mb-4 pb-4 border-b-2 border-[#1c1712]">
+          {/* 헤드라인 — 명조 900 */}
+          <h2 className="text-[1.75rem] md:text-[2.1rem] font-black leading-[1.18] font-serif group-hover:underline underline-offset-4 decoration-2 mb-3 pb-3 border-b border-[#c8bfa8]">
             {poll.title}
           </h2>
+          {/* 본문 — 명조 regular */}
           {poll.description && (
-            <p className="text-sm leading-relaxed mb-5 text-[#6b6356]">
+            <p className="text-[13px] font-serif font-normal leading-[1.85] mb-4 text-[#3d3326] line-clamp-3">
               {poll.description}
             </p>
           )}
-          <div className="flex items-center gap-1 text-xs text-[#8c8070]">
+          {/* 참여 정보 — 고딕 */}
+          <div className="flex items-center gap-1 text-[11px] text-[#8c8070] font-sans">
             <Users size={11} />
             <span>{totalVotes.toLocaleString()}명 참여</span>
             <span className="mx-1.5 text-[#c8bfa8]">·</span>
@@ -79,18 +83,19 @@ export default function VoteCard({ poll, size = "medium", voted = false }: Props
     );
   }
 
-  /* ── 2단 중단 기사 ── */
+  /* ── 2단 중간 기사 ── */
   if (size === "duo") {
     return (
       <Link href={`/votes/${poll.id}`} className="block group h-full">
-        <article className="p-5 h-full transition-colors hover:bg-black/[0.03]">
-          <div className="flex items-center gap-1.5 mb-3">
+        <article className="p-5 h-full transition-colors hover:bg-black/[0.02]">
+          {/* 부제/메타 — 고딕 */}
+          <div className="flex items-center gap-1.5 mb-2.5 font-sans">
             {isBreaking && (
               <span className="text-[9px] font-black bg-[#c0100a] text-white px-1.5 py-0.5 tracking-widest">
                 속보
               </span>
             )}
-            <span className={`text-xs font-bold px-1.5 py-0.5 ${catColor}`}>
+            <span className={`text-[11px] font-bold px-1.5 py-0.5 ${catColor}`}>
               {poll.category}
             </span>
             <span className="text-[10px] text-[#8c8070] flex items-center gap-0.5">
@@ -99,15 +104,18 @@ export default function VoteCard({ poll, size = "medium", voted = false }: Props
             </span>
             {voted && <CheckCheck size={10} className="text-[#6b5c30]" />}
           </div>
-          <h3 className="text-xl font-black leading-snug font-serif group-hover:underline mb-3 pb-3 border-b border-[#c8bfa8]">
+          {/* 헤드라인 — 명조 900 */}
+          <h3 className="text-[1.15rem] font-black leading-[1.3] font-serif group-hover:underline mb-3 pb-3 border-b border-[#c8bfa8]">
             {poll.title}
           </h3>
+          {/* 본문 — 명조 regular */}
           {poll.description && (
-            <p className="text-xs leading-relaxed mb-3 line-clamp-4 text-[#6b6356]">
+            <p className="text-[12px] font-serif font-normal leading-[1.8] mb-3 line-clamp-4 text-[#3d3326]">
               {poll.description}
             </p>
           )}
-          <div className="flex items-center gap-1 text-[10px] mt-auto text-[#8c8070]">
+          {/* 참여 정보 — 고딕 */}
+          <div className="flex items-center gap-1 text-[10px] mt-auto text-[#8c8070] font-sans">
             <Users size={10} />
             <span>{totalVotes.toLocaleString()}명 참여</span>
           </div>
@@ -119,15 +127,15 @@ export default function VoteCard({ poll, size = "medium", voted = false }: Props
   if (size === "large") {
     return (
       <Link href={`/votes/${poll.id}`} className="block group">
-        <article className="border-2 border-[#1c1712] p-6 transition-colors h-full relative hover:bg-black/[0.03]">
+        <article className="border-2 border-[#1c1712] p-6 transition-colors h-full relative hover:bg-black/[0.02]">
           {voted && (
-            <span className="absolute top-3 right-3 flex items-center gap-1 text-[10px] font-bold text-[#6b5c30] bg-[#d4c88a] px-1.5 py-0.5 border border-[#b0a060]">
+            <span className="absolute top-3 right-3 flex items-center gap-1 text-[10px] font-bold text-[#6b5c30] bg-[#d4c88a] px-1.5 py-0.5 border border-[#b0a060] font-sans">
               <CheckCheck size={10} />
               투표 완료
             </span>
           )}
-          <div className="flex items-center gap-2 mb-3">
-            <span className={`text-xs font-bold px-2 py-0.5 rounded ${catColor}`}>
+          <div className="flex items-center gap-2 mb-3 font-sans">
+            <span className={`text-xs font-bold px-2 py-0.5 ${catColor}`}>
               {poll.category}
             </span>
             <span className="text-xs text-[#6b6356] flex items-center gap-1">
@@ -139,11 +147,11 @@ export default function VoteCard({ poll, size = "medium", voted = false }: Props
             {poll.title}
           </h2>
           {poll.description && (
-            <p className="text-sm leading-relaxed mb-4 line-clamp-3 text-[#6b6356]">
+            <p className="text-sm font-serif font-normal leading-relaxed mb-4 line-clamp-3 text-[#3d3326]">
               {poll.description}
             </p>
           )}
-          <div className="flex items-center gap-1 text-xs border-t border-[#c8bfa8] pt-3 mt-auto text-[#6b6356]">
+          <div className="flex items-center gap-1 text-xs border-t border-[#c8bfa8] pt-3 mt-auto text-[#6b6356] font-sans">
             <Users size={11} />
             <span>{totalVotes.toLocaleString()}명 참여</span>
           </div>
@@ -155,17 +163,17 @@ export default function VoteCard({ poll, size = "medium", voted = false }: Props
   if (size === "small") {
     return (
       <Link href={`/votes/${poll.id}`} className="block group">
-        <article className="border-b border-[#c8bfa8] py-3 px-2 transition-colors hover:bg-black/[0.03]">
-          <div className="flex items-center gap-1.5 mb-1">
-            <span className={`text-xs font-bold px-1.5 py-0.5 rounded ${catColor}`}>
+        <article className="border-b border-[#c8bfa8] py-3 px-2 transition-colors hover:bg-black/[0.02]">
+          <div className="flex items-center gap-1.5 mb-1 font-sans">
+            <span className={`text-[11px] font-bold px-1.5 py-0.5 ${catColor}`}>
               {poll.category}
             </span>
             {voted && <CheckCheck size={10} className="text-[#6b5c30]" />}
           </div>
-          <h3 className="text-sm font-bold leading-snug font-serif group-hover:underline line-clamp-2">
+          <h3 className="text-[13px] font-black leading-snug font-serif group-hover:underline line-clamp-2 mb-1">
             {poll.title}
           </h3>
-          <div className="flex items-center gap-1 text-xs mt-1 text-[#8c8070]">
+          <div className="flex items-center gap-1 text-[10px] text-[#8c8070] font-sans">
             <Users size={10} />
             <span>{totalVotes.toLocaleString()}명</span>
             <span className="mx-1">·</span>
@@ -177,23 +185,24 @@ export default function VoteCard({ poll, size = "medium", voted = false }: Props
     );
   }
 
-  /* ── medium (기본) ── */
+  /* ── medium (3단 기본) ── */
   return (
     <Link href={`/votes/${poll.id}`} className="block group h-full">
-      <article className="p-4 transition-colors h-full relative hover:bg-black/[0.03]">
+      <article className="p-4 transition-colors h-full relative hover:bg-black/[0.02]">
         {voted && (
-          <span className="absolute top-2 right-2 flex items-center gap-0.5 text-[9px] font-bold text-[#6b5c30]">
+          <span className="absolute top-2 right-2 flex items-center gap-0.5 text-[9px] font-bold text-[#6b5c30] font-sans">
             <CheckCheck size={9} />
             완료
           </span>
         )}
-        <div className="flex items-center gap-2 mb-2">
+        {/* 부제/메타 — 고딕 */}
+        <div className="flex items-center gap-1.5 mb-2 font-sans">
           {isBreaking && (
             <span className="text-[9px] font-black bg-[#c0100a] text-white px-1 py-0.5 tracking-wider">
               속보
             </span>
           )}
-          <span className={`text-xs font-bold px-1.5 py-0.5 ${catColor}`}>
+          <span className={`text-[11px] font-bold px-1.5 py-0.5 ${catColor}`}>
             {poll.category}
           </span>
           <span className="text-[10px] flex items-center gap-0.5 text-[#6b6356]">
@@ -201,15 +210,18 @@ export default function VoteCard({ poll, size = "medium", voted = false }: Props
             {daysLeft}
           </span>
         </div>
-        <h2 className="text-base font-black leading-snug font-serif group-hover:underline mb-2 line-clamp-2">
+        {/* 기사 제목 — 명조 900 */}
+        <h2 className="text-[0.95rem] font-black leading-snug font-serif group-hover:underline mb-2 line-clamp-3">
           {poll.title}
         </h2>
+        {/* 본문 — 명조 regular */}
         {poll.description && (
-          <p className="text-xs line-clamp-2 mb-3 leading-relaxed text-[#6b6356]">
+          <p className="text-[11px] font-serif font-normal line-clamp-2 mb-3 leading-[1.75] text-[#3d3326]">
             {poll.description}
           </p>
         )}
-        <div className="flex items-center gap-1 text-[10px] text-[#8c8070]">
+        {/* 참여 정보 — 고딕 */}
+        <div className="flex items-center gap-1 text-[10px] text-[#8c8070] font-sans">
           <Users size={10} />
           <span>{totalVotes.toLocaleString()}명 참여</span>
         </div>
