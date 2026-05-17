@@ -10,6 +10,9 @@ export const RSS_FEEDS: Record<string, RssFeed[]> = {
     { name: "한겨레",   url: "https://www.hani.co.kr/rss/politics/index.rss" },
     { name: "경향신문", url: "https://www.khan.co.kr/rss/rssdata/polNewsRss.xml" },
     { name: "SBS",      url: "https://news.sbs.co.kr/news/headlineNewsRss.do?plink=headlinerss" },
+    { name: "MBC",      url: "https://imnews.imbc.com/rss/news/news_00.xml" },
+    { name: "KBS",      url: "https://news.kbs.co.kr/rss/rss.do" },
+    { name: "YTN",      url: "https://www.ytn.co.kr/ln/rss/rss01.xml" },
   ],
   경제: [
     { name: "연합뉴스",  url: "https://www.yna.co.kr/rss/economy.xml" },
@@ -17,6 +20,8 @@ export const RSS_FEEDS: Record<string, RssFeed[]> = {
     { name: "한겨레",   url: "https://www.hani.co.kr/rss/economy/index.rss" },
     { name: "매일경제", url: "https://www.mk.co.kr/rss/30000001/" },
     { name: "경향신문", url: "https://www.khan.co.kr/rss/rssdata/ecoNewsRss.xml" },
+    { name: "MBC",      url: "https://imnews.imbc.com/rss/news/news_00.xml" },
+    { name: "YTN",      url: "https://www.ytn.co.kr/ln/rss/rss01.xml" },
   ],
   사회: [
     { name: "연합뉴스",  url: "https://www.yna.co.kr/rss/society.xml" },
@@ -24,6 +29,9 @@ export const RSS_FEEDS: Record<string, RssFeed[]> = {
     { name: "한겨레",   url: "https://www.hani.co.kr/rss/society/index.rss" },
     { name: "경향신문", url: "https://www.khan.co.kr/rss/rssdata/sociNewsRss.xml" },
     { name: "SBS",      url: "https://news.sbs.co.kr/news/headlineNewsRss.do?plink=headlinerss" },
+    { name: "MBC",      url: "https://imnews.imbc.com/rss/news/news_00.xml" },
+    { name: "KBS",      url: "https://news.kbs.co.kr/rss/rss.do" },
+    { name: "YTN",      url: "https://www.ytn.co.kr/ln/rss/rss01.xml" },
   ],
   문화: [
     { name: "연합뉴스",  url: "https://www.yna.co.kr/rss/culture.xml" },
@@ -37,6 +45,8 @@ export const RSS_FEEDS: Record<string, RssFeed[]> = {
     { name: "한겨레",   url: "https://www.hani.co.kr/rss/international/index.rss" },
     { name: "경향신문", url: "https://www.khan.co.kr/rss/rssdata/intNewsRss.xml" },
     { name: "SBS",      url: "https://news.sbs.co.kr/news/headlineNewsRss.do?plink=headlinerss" },
+    { name: "KBS",      url: "https://news.kbs.co.kr/rss/rss.do" },
+    { name: "YTN",      url: "https://www.ytn.co.kr/ln/rss/rss01.xml" },
   ],
   기술: [
     { name: "연합뉴스",  url: "https://www.yna.co.kr/rss/it.xml" },

@@ -310,3 +310,98 @@ export async function upsertCategoryQuota(
   if (error) return { success: false, error: error.message };
   return { success: true };
 }
+
+/* ─────────────────── AI 후보 초안 ─────────────────── */
+
+export interface DraftRow {
+  id: string;
+  title: string;
+  description: string | null;
+  category: string;
+  question_type: "binary" | "multiple" | "scale";
+  options: string[];
+  source_url: string | null;
+  source_outlet: string | null;
+  youtube_url: string | null;
+  status: "pending" | "approved" | "rejected";
+  created_at: string;
+  reviewed_at: string | null;
+}
+
+export async function getDrafts(status?: string): Promise<DraftRow[]> {
+  const supabase = await createClient();
+  const base = supabase.from("poll_drafts").select("*").order("created_at", { ascending: false });
+  const { data } = await (status ? base.eq("status", status) : base);
+  return (data ?? []).map((r) => ({ ...r, options: r.options ?? [] })) as DraftRow[];
+}
+
+export async function approveDraft(
+  id: string
+): Promise<{ success: boolean; error?: string; pollId?: string }> {
+  const supabase = await createClient();
+
+  const { data: draft } = await supabase.from("poll_drafts").select("*").eq("id", id).single();
+  if (!draft) return { success: false, error: "초안을 찾을 수 없습니다" };
+
+  const { data: poll, error: pollError } = await supabase
+    .from("polls")
+    .insert({
+      title: draft.title,
+      description: draft.description,
+      category: draft.category,
+      is_active: true,
+      youtube_url: draft.youtube_url,
+    })
+    .select("id")
+    .single();
+
+  if (pollError || !poll) return { success: false, error: pollError?.message ?? "투표 생성 실패" };
+
+  const optionRows = (draft.options as string[]).map((text: string, i: number) => ({
+    poll_id: poll.id,
+    text,
+    votes_count: 0,
+    display_order: i,
+  }));
+
+  const { error: optError } = await supabase.from("options").insert(optionRows);
+  if (optError) {
+    await supabase.from("polls").delete().eq("id", poll.id);
+    return { success: false, error: optError.message };
+  }
+
+  await supabase
+    .from("poll_drafts")
+    .update({ status: "approved", reviewed_at: new Date().toISOString() })
+    .eq("id", id);
+
+  revalidatePath("/");
+  return { success: true, pollId: poll.id };
+}
+
+export async function rejectDraft(id: string): Promise<{ success: boolean; error?: string }> {
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("poll_drafts")
+    .update({ status: "rejected", reviewed_at: new Date().toISOString() })
+    .eq("id", id);
+  if (error) return { success: false, error: error.message };
+  return { success: true };
+}
+
+export async function updateDraft(
+  id: string,
+  data: Partial<Pick<DraftRow, "title" | "description" | "category" | "options">>
+): Promise<{ success: boolean; error?: string }> {
+  const supabase = await createClient();
+  const { error } = await supabase.from("poll_drafts").update(data).eq("id", id);
+  if (error) return { success: false, error: error.message };
+  return { success: true };
+}
+
+export async function deleteDraft(id: string): Promise<{ success: boolean; error?: string }> {
+  const supabase = await createClient();
+  const { error } = await supabase.from("poll_drafts").delete().eq("id", id);
+  if (error) return { success: false, error: error.message };
+  return { success: true };
+}
