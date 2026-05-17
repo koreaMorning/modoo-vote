@@ -150,6 +150,9 @@ export default function DraftsTab({ onPollCreated }: { onPollCreated: () => Prom
     if (result.success) {
       await loadDrafts();
       await onPollCreated();
+      if (result.publishLabel) {
+        setGenMsg({ type: "ok", text: `승인됨 · ${result.publishLabel}에 발행 예정` });
+      }
     } else {
       alert(result.error);
     }

@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Category } from "@/types";
+import { getCurrentEdition } from "@/lib/publishing";
 
 const categories: Category[] = [
   "정치",
@@ -19,6 +20,7 @@ export default function Header() {
     month: "long",
     day: "numeric",
     weekday: "long",
+    timeZone: "Asia/Seoul",
   });
 
   const openDateMs = Date.UTC(2026, 4, 1); // 2026-05-01 UTC
@@ -28,6 +30,8 @@ export default function Header() {
     new Date().getUTCDate()
   );
   const issueNumber = Math.max(1, Math.floor((todayMs - openDateMs) / 86400000) + 1);
+
+  const { edition } = getCurrentEdition();
 
   return (
     <header className="border-b-4 border-black">
@@ -49,7 +53,7 @@ export default function Header() {
             </p>
           </Link>
           <span className="absolute right-0 bottom-2 text-[11px] font-bold tracking-widest text-[#6b6356] border border-[#c8bfa8] px-2 py-0.5">
-            제&nbsp;{issueNumber}호
+            제&nbsp;{issueNumber}호&nbsp;·&nbsp;{edition}
           </span>
         </div>
 

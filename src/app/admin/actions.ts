@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { cookies } from "next/headers";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { getNextPublishTime, formatPublishLabel } from "@/lib/publishing";
 
 function getSessionToken() {
   const pw = process.env.ADMIN_PASSWORD ?? "";
@@ -46,6 +47,8 @@ export interface PollInput {
   youtube_url?: string;
   source_count?: number;
   is_main_article?: boolean;
+  publish_at?: string;
+  publish_status?: string;
 }
 
 export async function createPoll(data: PollInput): Promise<{ success: boolean; error?: string; id?: string }> {
@@ -62,6 +65,8 @@ export async function createPoll(data: PollInput): Promise<{ success: boolean; e
       youtube_url: data.youtube_url?.trim() || null,
       source_count: data.source_count ?? 1,
       is_main_article: data.is_main_article ?? false,
+      publish_status: data.publish_status ?? "published",
+      publish_at: data.publish_at ?? new Date().toISOString(),
     })
     .select("id")
     .single();
@@ -129,6 +134,29 @@ export async function toggleBreaking(id: string, isBreaking: boolean): Promise<{
 export async function togglePinned(id: string, isPinned: boolean): Promise<{ success: boolean; error?: string }> {
   const supabase = await createClient();
   const { error } = await supabase.from("polls").update({ is_pinned: isPinned }).eq("id", id);
+  if (error) return { success: false, error: error.message };
+  revalidatePath("/");
+  return { success: true };
+}
+
+export async function publishPollNow(id: string): Promise<{ success: boolean; error?: string }> {
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("polls")
+    .update({ publish_at: new Date().toISOString(), publish_status: "published" })
+    .eq("id", id);
+  if (error) return { success: false, error: error.message };
+  revalidatePath("/");
+  return { success: true };
+}
+
+export async function updatePublishAt(id: string, publishAt: string): Promise<{ success: boolean; error?: string }> {
+  const supabase = await createClient();
+  const isPast = new Date(publishAt) <= new Date();
+  const { error } = await supabase
+    .from("polls")
+    .update({ publish_at: publishAt, publish_status: isPast ? "published" : "scheduled" })
+    .eq("id", id);
   if (error) return { success: false, error: error.message };
   revalidatePath("/");
   return { success: true };
@@ -286,7 +314,7 @@ export async function getPolls() {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("polls")
-    .select("id, title, category, is_active, is_breaking, is_pinned, is_main_article, source_count, created_at, ends_at, view_count, options(votes_count)")
+    .select("id, title, category, is_active, is_breaking, is_pinned, is_main_article, source_count, publish_status, publish_at, created_at, ends_at, view_count, options(votes_count)")
     .order("created_at", { ascending: false });
 
   if (error) return [];
@@ -349,13 +377,16 @@ export async function getDrafts(status?: string): Promise<DraftRow[]> {
 
 export async function approveDraft(
   id: string
-): Promise<{ success: boolean; error?: string; pollId?: string }> {
+): Promise<{ success: boolean; error?: string; pollId?: string; publishAt?: string; publishLabel?: string }> {
   const supabase = await createClient();
 
   const { data: draft } = await supabase.from("poll_drafts").select("*").eq("id", id).single();
   if (!draft) return { success: false, error: "초안을 찾을 수 없습니다" };
 
   const sourceCount = draft.source_count ?? 1;
+  const publishAt = getNextPublishTime().toISOString();
+  const publishLabel = formatPublishLabel(publishAt);
+
   const { data: poll, error: pollError } = await supabase
     .from("polls")
     .insert({
@@ -366,6 +397,8 @@ export async function approveDraft(
       youtube_url: draft.youtube_url,
       source_count: sourceCount,
       is_main_article: sourceCount >= 2,
+      publish_status: "scheduled",
+      publish_at: publishAt,
     })
     .select("id")
     .single();
@@ -391,7 +424,7 @@ export async function approveDraft(
     .eq("id", id);
 
   revalidatePath("/");
-  return { success: true, pollId: poll.id };
+  return { success: true, pollId: poll.id, publishAt, publishLabel };
 }
 
 export async function rejectDraft(id: string): Promise<{ success: boolean; error?: string }> {

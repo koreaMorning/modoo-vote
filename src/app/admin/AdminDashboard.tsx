@@ -7,6 +7,8 @@ import {
   togglePollActive,
   toggleBreaking,
   togglePinned,
+  publishPollNow,
+  updatePublishAt,
   getPolls,
   logoutAdmin,
   getCategoriesWithRooms,
@@ -23,6 +25,7 @@ import {
   RoomRow,
   RoomInput,
 } from "./actions";
+import { formatPublishLabel, toKSTDatetimeLocal, fromKSTDatetimeLocal } from "@/lib/publishing";
 import DraftsTab from "./DraftsTab";
 import { Eye, PlayCircle } from "lucide-react";
 import { Category } from "@/types";
@@ -48,6 +51,8 @@ interface PollRow {
   is_pinned: boolean;
   is_main_article: boolean;
   source_count: number;
+  publish_status: string;
+  publish_at: string | null;
   created_at: string;
   ends_at: string | null;
   total_votes: number;
@@ -618,6 +623,8 @@ function PostsTab({ polls, onRefresh }: { polls: PollRow[]; onRefresh: () => Pro
   const [msg, setMsg] = useState<{ type: "ok" | "err"; text: string } | null>(null);
   const [quotas, setQuotas] = useState<Record<string, number>>({});
   const [showStats, setShowStats] = useState(true);
+  const [publishEditId, setPublishEditId] = useState<string | null>(null);
+  const [publishEditValue, setPublishEditValue] = useState("");
 
   useEffect(() => {
     getCategoryQuotas().then(setQuotas);
@@ -683,6 +690,39 @@ function PostsTab({ polls, onRefresh }: { polls: PollRow[]; onRefresh: () => Pro
     }
   }
 
+  async function handlePublishNow(id: string) {
+    setSaving(id);
+    const result = await publishPollNow(id);
+    setSaving(null);
+    if (result.success) {
+      await onRefresh();
+      setMsg({ type: "ok", text: "즉시 발행되었습니다" });
+    } else {
+      setMsg({ type: "err", text: result.error ?? "실패" });
+    }
+  }
+
+  async function handleUpdatePublishAt(id: string) {
+    if (!publishEditValue) return;
+    setSaving(id);
+    const utcIso = fromKSTDatetimeLocal(publishEditValue);
+    const result = await updatePublishAt(id, utcIso);
+    setSaving(null);
+    if (result.success) {
+      setPublishEditId(null);
+      await onRefresh();
+      setMsg({ type: "ok", text: `발행 시간이 ${formatPublishLabel(utcIso)}로 변경되었습니다` });
+    } else {
+      setMsg({ type: "err", text: result.error ?? "실패" });
+    }
+  }
+
+  const now = new Date();
+  const scheduledPolls = polls.filter(
+    (p) => p.publish_at && new Date(p.publish_at) > now && !p.is_breaking
+  );
+  const activePollList = polls.filter((p) => !scheduledPolls.includes(p));
+
   return (
     <div>
       <div className="flex items-center justify-between mb-4">
@@ -725,11 +765,85 @@ function PostsTab({ polls, onRefresh }: { polls: PollRow[]; onRefresh: () => Pro
         </div>
       )}
 
+      {/* 발행 예정 섹션 */}
+      {scheduledPolls.length > 0 && (
+        <div className="border-2 border-[#1a5c75] mb-6">
+          <div className="border-b-2 border-[#1a5c75] bg-[#1a5c75] text-white px-4 py-2 flex items-center justify-between">
+            <span className="text-[10px] font-black tracking-[0.25em] uppercase">발행 예정 ({scheduledPolls.length})</span>
+            <span className="text-[10px] text-[#a8d8e8]">publish_at {">"} 현재 시각</span>
+          </div>
+          <div className="divide-y divide-[#c8e0e8]">
+            {scheduledPolls.map((p) => (
+              <div key={p.id} className="p-4 flex items-center gap-4 bg-[#f0f8fc]">
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 mb-1 flex-wrap">
+                    <span className="text-[10px] font-bold bg-[#1c1712] text-[#f0e5c0] px-2 py-0.5">{p.category}</span>
+                    <span className="text-[10px] font-bold text-[#1a5c75] border border-[#1a5c75] px-2 py-0.5">
+                      {p.publish_at ? formatPublishLabel(p.publish_at) : "발행 예정"} 발행
+                    </span>
+                    {p.publish_at && (
+                      <span className="text-[10px] text-[#6b6356] font-mono">
+                        {toKSTDatetimeLocal(p.publish_at).replace("T", " ")} KST
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-sm font-bold leading-snug truncate">{p.title}</p>
+                </div>
+                <div className="flex items-center gap-2 shrink-0 flex-wrap justify-end">
+                  {publishEditId === p.id ? (
+                    <>
+                      <input
+                        type="datetime-local"
+                        value={publishEditValue}
+                        onChange={(e) => setPublishEditValue(e.target.value)}
+                        className="border border-[#c8bfa8] bg-white px-2 py-1 text-xs font-mono"
+                      />
+                      <button
+                        onClick={() => handleUpdatePublishAt(p.id)}
+                        disabled={saving === p.id}
+                        className="text-xs border border-green-600 bg-green-600 text-white px-3 py-1 hover:bg-green-700 disabled:opacity-50 transition-colors"
+                      >
+                        {saving === p.id ? "..." : "저장"}
+                      </button>
+                      <button
+                        onClick={() => setPublishEditId(null)}
+                        className="text-xs border border-[#c8bfa8] px-3 py-1 hover:border-[#1c1712] transition-colors"
+                      >
+                        취소
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <button
+                        onClick={() => handlePublishNow(p.id)}
+                        disabled={saving === p.id}
+                        className="text-xs border border-[#1a5c75] bg-[#1a5c75] text-white px-3 py-1 hover:bg-[#0e4055] disabled:opacity-50 transition-colors"
+                      >
+                        {saving === p.id ? "..." : "즉시 발행"}
+                      </button>
+                      <button
+                        onClick={() => {
+                          setPublishEditId(p.id);
+                          setPublishEditValue(p.publish_at ? toKSTDatetimeLocal(p.publish_at) : "");
+                        }}
+                        className="text-xs border border-[#c8bfa8] px-3 py-1 hover:border-[#1c1712] transition-colors"
+                      >
+                        시간 변경
+                      </button>
+                    </>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       <div className="border-2 border-[#1c1712] divide-y-2 divide-[#c8bfa8]">
-        {polls.length === 0 && (
+        {activePollList.length === 0 && (
           <div className="py-12 text-center text-sm text-[#8c8070]">등록된 게시글이 없습니다</div>
         )}
-        {polls.map((p) => (
+        {activePollList.map((p) => (
           <div key={p.id} className="p-4">
             {editId === p.id ? (
               /* Edit form */

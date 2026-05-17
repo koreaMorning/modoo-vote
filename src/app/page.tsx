@@ -30,10 +30,12 @@ export default async function HomePage({ searchParams }: Props) {
   const { category } = await searchParams;
   const supabase = await createClient();
 
+  const now = new Date().toISOString();
   let pollQuery = supabase
     .from("polls")
     .select("*, options(votes_count)")
-    .eq("is_active", true);
+    .eq("is_active", true)
+    .or(`is_breaking.eq.true,publish_at.is.null,publish_at.lte.${now}`);
 
   if (category) {
     pollQuery = pollQuery.eq("category", category);
