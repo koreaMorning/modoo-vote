@@ -26,7 +26,21 @@
       "PowerShell(Stop-Process *)",
       "Bash(git revert *)",
       "Bash(git checkout *)",
-      "Bash(npx supabase *)"
+      "Bash(npx supabase *)",
+      "Bash(Get-ChildItem -Path \"C:\\\\projects\\\\modoo-vote\" -Recurse -Directory)",
+      "Bash(Select-Object -ExpandProperty FullName)",
+      "Bash(Sort-Object)",
+      "Bash(node_modules/.bin/tsc *)",
+      "Bash(npx --no next build)",
+      "Bash(node_modules/.bin/next build *)",
+      "PowerShell(npm run *)",
+      "PowerShell(npm install *)",
+      "PowerShell(Get-ChildItem -Path \"C:\\\\projects\\\\modoo-vote\" -Force | Select-Object Name, @{Name=\"Type\"; Expression={if \\($_.PSIsContainer\\) {\"DIR\"} else {\"FILE\"}}} | Sort-Object Type, Name)",
+      "PowerShell(Get-ChildItem -Path \"C:\\\\projects\\\\modoo-vote\\\\src\" -Force -ErrorAction SilentlyContinue | Select-Object Name, @{Name=\"Type\"; Expression={if \\($_.PSIsContainer\\) {\"DIR\"} else {\"FILE\"}}} | Sort-Object Type, Name)",
+      "Bash(New-Item -ItemType Directory -Force \"C:\\\\projects\\\\modoo-vote\\\\src\\\\app\\\\api\\\\admin\\\\rss\\\\batch\")",
+      "Bash(Out-Null)",
+      "Bash(New-Item -ItemType Directory -Force \"C:\\\\projects\\\\modoo-vote\\\\src\\\\app\\\\api\\\\admin\\\\ai\\\\drafts\")",
+      "Bash(Write-Host \"dirs created\")"
     ]
   }
 }

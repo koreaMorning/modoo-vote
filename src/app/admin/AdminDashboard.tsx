@@ -6,6 +6,7 @@ import {
   updatePoll,
   togglePollActive,
   toggleBreaking,
+  togglePinned,
   getPolls,
   logoutAdmin,
   getCategoriesWithRooms,
@@ -44,6 +45,9 @@ interface PollRow {
   category: string;
   is_active: boolean;
   is_breaking: boolean;
+  is_pinned: boolean;
+  is_main_article: boolean;
+  source_count: number;
   created_at: string;
   ends_at: string | null;
   total_votes: number;
@@ -667,6 +671,17 @@ function PostsTab({ polls, onRefresh }: { polls: PollRow[]; onRefresh: () => Pro
     }
   }
 
+  async function handlePin(id: string, current: boolean) {
+    setSaving(id);
+    const result = await togglePinned(id, !current);
+    setSaving(null);
+    if (result.success) {
+      await onRefresh();
+    } else {
+      setMsg({ type: "err", text: result.error ?? "실패" });
+    }
+  }
+
   return (
     <div>
       <div className="flex items-center justify-between mb-4">
@@ -771,6 +786,15 @@ function PostsTab({ polls, onRefresh }: { polls: PollRow[]; onRefresh: () => Pro
                     >
                       {p.is_active ? "활성" : "비활성"}
                     </span>
+                    {p.is_pinned && (
+                      <span className="text-[10px] font-bold px-2 py-0.5 bg-[#1a5c75] text-white">고정</span>
+                    )}
+                    {p.is_main_article && (
+                      <span className="text-[10px] font-bold px-1.5 py-0.5 border border-[#c4b08a] text-[#6b4e20]">메인</span>
+                    )}
+                    {p.source_count > 1 && (
+                      <span className="text-[10px] text-[#8c8070]">🔗 {p.source_count}개 언론사</span>
+                    )}
                     <span className="text-[10px] text-[#8c8070] flex items-center gap-0.5">
                       {p.total_votes.toLocaleString()}명 참여
                     </span>
@@ -798,6 +822,17 @@ function PostsTab({ polls, onRefresh }: { polls: PollRow[]; onRefresh: () => Pro
                     className="text-xs border border-[#c8bfa8] px-3 py-1 hover:border-[#1c1712] transition-colors"
                   >
                     수정
+                  </button>
+                  <button
+                    onClick={() => handlePin(p.id, p.is_pinned)}
+                    disabled={saving === p.id}
+                    className={`text-xs border px-3 py-1 transition-colors disabled:opacity-50 ${
+                      p.is_pinned
+                        ? "border-[#1a5c75] bg-[#1a5c75] text-white hover:bg-[#0e4055]"
+                        : "border-[#a0b8c4] text-[#1a5c75] hover:bg-[#e8f4f8]"
+                    }`}
+                  >
+                    {saving === p.id ? "..." : p.is_pinned ? "고정 해제" : "고정"}
                   </button>
                   <button
                     onClick={() => handleBreaking(p.id, p.is_breaking)}

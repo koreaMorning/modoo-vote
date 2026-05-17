@@ -44,6 +44,8 @@ export interface PollInput {
   options: string[];
   ends_at?: string;
   youtube_url?: string;
+  source_count?: number;
+  is_main_article?: boolean;
 }
 
 export async function createPoll(data: PollInput): Promise<{ success: boolean; error?: string; id?: string }> {
@@ -58,6 +60,8 @@ export async function createPoll(data: PollInput): Promise<{ success: boolean; e
       is_active: true,
       ends_at: data.ends_at || null,
       youtube_url: data.youtube_url?.trim() || null,
+      source_count: data.source_count ?? 1,
+      is_main_article: data.is_main_article ?? false,
     })
     .select("id")
     .single();
@@ -117,6 +121,14 @@ export async function togglePollActive(id: string, isActive: boolean): Promise<{
 export async function toggleBreaking(id: string, isBreaking: boolean): Promise<{ success: boolean; error?: string }> {
   const supabase = await createClient();
   const { error } = await supabase.from("polls").update({ is_breaking: isBreaking }).eq("id", id);
+  if (error) return { success: false, error: error.message };
+  revalidatePath("/");
+  return { success: true };
+}
+
+export async function togglePinned(id: string, isPinned: boolean): Promise<{ success: boolean; error?: string }> {
+  const supabase = await createClient();
+  const { error } = await supabase.from("polls").update({ is_pinned: isPinned }).eq("id", id);
   if (error) return { success: false, error: error.message };
   revalidatePath("/");
   return { success: true };
@@ -274,7 +286,7 @@ export async function getPolls() {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("polls")
-    .select("id, title, category, is_active, is_breaking, created_at, ends_at, view_count, options(votes_count)")
+    .select("id, title, category, is_active, is_breaking, is_pinned, is_main_article, source_count, created_at, ends_at, view_count, options(votes_count)")
     .order("created_at", { ascending: false });
 
   if (error) return [];
@@ -343,6 +355,7 @@ export async function approveDraft(
   const { data: draft } = await supabase.from("poll_drafts").select("*").eq("id", id).single();
   if (!draft) return { success: false, error: "초안을 찾을 수 없습니다" };
 
+  const sourceCount = draft.source_count ?? 1;
   const { data: poll, error: pollError } = await supabase
     .from("polls")
     .insert({
@@ -351,6 +364,8 @@ export async function approveDraft(
       category: draft.category,
       is_active: true,
       youtube_url: draft.youtube_url,
+      source_count: sourceCount,
+      is_main_article: sourceCount >= 2,
     })
     .select("id")
     .single();

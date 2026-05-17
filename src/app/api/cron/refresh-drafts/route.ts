@@ -59,15 +59,22 @@ function jaccard(a: Set<string>, b: Set<string>): number {
   return union === 0 ? 0 : ix / union;
 }
 
-function deduplicate(items: RssItem[]): RssItem[] {
-  const result: RssItem[] = [];
+function deduplicate(items: RssItem[]): (RssItem & { source_count: number })[] {
+  const result: (RssItem & { source_count: number })[] = [];
   const sets: Set<string>[] = [];
   for (const item of items) {
     if (!item.title) continue;
     const tokens = tokenize(item.title);
-    if (sets.some((s) => jaccard(tokens, s) >= 0.4)) continue;
-    result.push(item);
-    sets.push(tokens);
+    let dupeIdx = -1;
+    for (let i = 0; i < sets.length; i++) {
+      if (jaccard(tokens, sets[i]) >= 0.4) { dupeIdx = i; break; }
+    }
+    if (dupeIdx >= 0) {
+      result[dupeIdx].source_count++;
+    } else {
+      result.push({ ...item, source_count: 1 });
+      sets.push(tokens);
+    }
   }
   return result;
 }
@@ -77,7 +84,7 @@ const FETCH_HEADERS = {
   Accept: "application/rss+xml, application/xml, text/xml, */*",
 };
 
-async function fetchCategoryRss(category: string): Promise<RssItem[]> {
+async function fetchCategoryRss(category: string): Promise<(RssItem & { source_count: number })[]> {
   const feeds = RSS_FEEDS[category] ?? [];
   const results = await Promise.allSettled(
     feeds.map(async (feed) => {
@@ -96,7 +103,7 @@ async function fetchCategoryRss(category: string): Promise<RssItem[]> {
 
 async function generateDrafts(
   category: string,
-  items: RssItem[],
+  items: (RssItem & { source_count: number })[],
   needed: number
 ): Promise<number> {
   if (items.length === 0 || needed <= 0) return 0;
@@ -168,6 +175,7 @@ JSON 배열 형식으로만 응답하세요:
       source_url: article.link ?? null,
       source_outlet: article.outlet ?? null,
       youtube_url: article.youtube_url ?? null,
+      source_count: article.source_count ?? 1,
       status: "pending",
     });
   }

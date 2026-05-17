@@ -12,6 +12,7 @@ interface ArticleInput {
   link: string;
   outlet: string;
   youtube_url: string | null;
+  source_count?: number;
 }
 
 export async function POST(req: NextRequest) {
@@ -97,6 +98,7 @@ ${articleList}
         source_url: article.link ?? null,
         source_outlet: article.outlet ?? null,
         youtube_url: article.youtube_url ?? null,
+        source_count: article.source_count ?? 1,
         status: "pending",
       });
     }

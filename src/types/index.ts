@@ -15,6 +15,9 @@ export interface Poll {
   category: Category;
   is_active: boolean;
   is_breaking: boolean;
+  is_pinned: boolean;
+  is_main_article: boolean;
+  source_count: number;
   ends_at: string | null;
   created_at: string;
   options?: Option[];

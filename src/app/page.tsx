@@ -8,6 +8,7 @@ import Link from "next/link";
 import { Poll } from "@/types";
 import { Room } from "@/lib/rooms";
 import { Users, Clock } from "lucide-react";
+import { rankPolls } from "@/lib/ranking";
 
 interface Props {
   searchParams: Promise<{ category?: string }>;
@@ -28,21 +29,23 @@ export default async function HomePage({ searchParams }: Props) {
   const { category } = await searchParams;
   const supabase = await createClient();
 
-  let query = supabase
+  let pollQuery = supabase
     .from("polls")
     .select("*, options(votes_count)")
-    .eq("is_active", true)
-    .order("created_at", { ascending: false });
+    .eq("is_active", true);
 
   if (category) {
-    query = query.eq("category", category);
+    pollQuery = pollQuery.eq("category", category);
   }
 
-  const [{ data: rawPolls }, { data: rawRooms }] = await Promise.all([
-    query,
+  /* Round 1: polls, rooms, total unique voter count */
+  const [{ data: rawPolls }, { data: rawRooms }, { data: totalVotersData }] = await Promise.all([
+    pollQuery,
     supabase.from("rooms").select("id, title, description, slug, icon, sort_order").order("sort_order", { ascending: true }).limit(8),
+    supabase.rpc("get_total_unique_voters"),
   ]);
   const rooms = (rawRooms ?? []) as Pick<Room, "id" | "title" | "description" | "slug" | "icon" | "sort_order">[];
+  const totalUsers = Number(totalVotersData ?? 0);
 
   const polls: Poll[] = (rawPolls ?? []).map((p) => ({
     ...p,
@@ -53,36 +56,40 @@ export default async function HomePage({ searchParams }: Props) {
     ),
   }));
 
-  /* Determine which polls the user has already voted on */
+  /* Round 2: opinion counts + voted poll detection (parallel) */
   const cookieStore = await cookies();
   const fingerprint = cookieStore.get("voter_id")?.value ?? null;
+  const pollIds = polls.map((p) => p.id);
+
+  const [voteRecordsResult, opinionsResult] = await Promise.all([
+    fingerprint && pollIds.length > 0
+      ? supabase.from("votes").select("poll_id").eq("voter_fingerprint", fingerprint).in("poll_id", pollIds)
+      : Promise.resolve({ data: null }),
+    pollIds.length > 0
+      ? supabase.from("opinions").select("poll_id").in("poll_id", pollIds)
+      : Promise.resolve({ data: null }),
+  ]);
+
   const votedPollIds = new Set<string>();
+  (voteRecordsResult.data ?? []).forEach((r: { poll_id: string }) => votedPollIds.add(r.poll_id));
 
-  if (fingerprint && polls.length > 0) {
-    const { data: voteRecords } = await supabase
-      .from("votes")
-      .select("poll_id")
-      .eq("voter_fingerprint", fingerprint)
-      .in(
-        "poll_id",
-        polls.map((p) => p.id)
-      );
-    (voteRecords ?? []).forEach((r: { poll_id: string }) =>
-      votedPollIds.add(r.poll_id)
-    );
-  }
+  const commentCounts: Record<string, number> = {};
+  (opinionsResult.data ?? []).forEach((o: { poll_id: string }) => {
+    commentCounts[o.poll_id] = (commentCounts[o.poll_id] ?? 0) + 1;
+  });
 
-  /* Most popular poll as front-page hero (only on main, no category filter) */
-  const heroPoll: Poll | null = !category
-    ? ([...polls].sort((a, b) => (b.total_votes ?? 0) - (a.total_votes ?? 0))[0] ?? null)
-    : null;
+  /* Apply ranking algorithm */
+  const rankedPolls = rankPolls(polls, commentCounts, totalUsers);
+
+  /* Top-ranked poll as front-page hero (only on main, no category filter) */
+  const heroPoll: Poll | null = !category ? (rankedPolls[0] ?? null) : null;
 
   /* Breaking news polls */
   const breakingPolls = polls.filter((p) => p.is_breaking);
 
-  /* Group polls by category, excluding the hero */
+  /* Group polls by category in ranking order, excluding the hero */
   const heroId = heroPoll?.id;
-  const pollsByCategory = polls.reduce<Record<string, Poll[]>>((acc, poll) => {
+  const pollsByCategory = rankedPolls.reduce<Record<string, Poll[]>>((acc, poll) => {
     if (heroId && poll.id === heroId) return acc;
     if (!acc[poll.category]) acc[poll.category] = [];
     acc[poll.category].push(poll);

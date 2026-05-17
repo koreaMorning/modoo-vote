@@ -53,18 +53,20 @@ function jaccard(a: Set<string>, b: Set<string>): number {
   return union === 0 ? 0 : intersection / union;
 }
 
-function deduplicate(items: RssItem[], threshold = 0.4): RssItem[] {
-  const result: RssItem[] = [];
+function deduplicate(items: RssItem[], threshold = 0.4): (RssItem & { source_count: number })[] {
+  const result: (RssItem & { source_count: number })[] = [];
   const tokenSets: Set<string>[] = [];
   for (const item of items) {
     if (!item.title) continue;
     const tokens = tokenize(item.title);
-    let isDupe = false;
-    for (const existing of tokenSets) {
-      if (jaccard(tokens, existing) >= threshold) { isDupe = true; break; }
+    let dupeIdx = -1;
+    for (let i = 0; i < tokenSets.length; i++) {
+      if (jaccard(tokens, tokenSets[i]) >= threshold) { dupeIdx = i; break; }
     }
-    if (!isDupe) {
-      result.push(item);
+    if (dupeIdx >= 0) {
+      result[dupeIdx].source_count++;
+    } else {
+      result.push({ ...item, source_count: 1 });
       tokenSets.push(tokens);
     }
   }
