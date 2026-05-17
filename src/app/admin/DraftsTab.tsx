@@ -29,10 +29,11 @@ export default function DraftsTab({ onPollCreated }: { onPollCreated: () => Prom
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("pending");
 
-  // Generation state
+  // Manual generation state (single category)
   const [genCategory, setGenCategory] = useState("정치");
   const [fetching, setFetching] = useState(false);
   const [generating, setGenerating] = useState(false);
+  const [globalRunning, setGlobalRunning] = useState(false);
   const [genMsg, setGenMsg] = useState<{ type: "ok" | "err"; text: string } | null>(null);
   const [batchItems, setBatchItems] = useState<unknown[]>([]);
   const [batchStats, setBatchStats] = useState<{ outlet_count: number; total_fetched: number } | null>(null);
@@ -121,6 +122,27 @@ export default function DraftsTab({ onPollCreated }: { onPollCreated: () => Prom
     }
   }
 
+  async function handleGlobalRefresh() {
+    setGlobalRunning(true);
+    setGenMsg(null);
+    try {
+      const res = await fetch("/api/cron/refresh-drafts");
+      const data = await res.json();
+      if (data.error) throw new Error(data.error);
+      const processed = (data.processed as string[] | undefined)?.join(", ") ?? "";
+      setGenMsg({
+        type: "ok",
+        text: `전체 새로고침 완료: ${data.created}개 후보 생성${processed ? ` (${processed})` : ""}`,
+      });
+      await loadDrafts();
+      setStatusFilter("pending");
+    } catch (e) {
+      setGenMsg({ type: "err", text: "전체 새로고침 실패: " + String(e) });
+    } finally {
+      setGlobalRunning(false);
+    }
+  }
+
   async function handleApprove(id: string) {
     setActionId(id);
     const result = await approveDraft(id);
@@ -180,8 +202,15 @@ export default function DraftsTab({ onPollCreated }: { onPollCreated: () => Prom
     <div>
       {/* AI Generation Panel */}
       <div className="border-2 border-[#1c1712] mb-6">
-        <div className="border-b-2 border-[#1c1712] bg-[#1c1712] text-[#f0e5c0] px-4 py-2">
+        <div className="border-b-2 border-[#1c1712] bg-[#1c1712] text-[#f0e5c0] px-4 py-2 flex items-center justify-between">
           <span className="text-[10px] font-black tracking-[0.25em] uppercase">AI 후보 자동 생성</span>
+          <button
+            onClick={handleGlobalRefresh}
+            disabled={globalRunning || fetching || generating}
+            className="text-[10px] border border-[#c8b890] text-[#c8b890] px-3 py-0.5 hover:bg-[#c8b890] hover:text-[#1c1712] transition-colors disabled:opacity-40"
+          >
+            {globalRunning ? "실행 중..." : "전체 카테고리 강제 새로고침"}
+          </button>
         </div>
         <div className="p-4 space-y-3">
           <div className="flex gap-2 flex-wrap">
@@ -196,14 +225,14 @@ export default function DraftsTab({ onPollCreated }: { onPollCreated: () => Prom
             </select>
             <button
               onClick={handleFetch}
-              disabled={fetching || generating}
+              disabled={fetching || generating || globalRunning}
               className="border-2 border-[#1c1712] bg-[#f5f0e8] text-[#1c1712] px-4 py-2 text-sm font-bold hover:bg-[#ede0c0] transition-colors disabled:opacity-50"
             >
               {fetching ? "수집 중..." : "① RSS 수집"}
             </button>
             <button
               onClick={handleGenerate}
-              disabled={batchItems.length === 0 || generating || fetching}
+              disabled={batchItems.length === 0 || generating || fetching || globalRunning}
               className="border-2 border-[#1c1712] bg-[#1c1712] text-[#f0e5c0] px-4 py-2 text-sm font-bold hover:bg-[#3d2b1f] transition-colors disabled:opacity-50"
             >
               {generating ? "생성 중..." : "② AI 후보 생성"}

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useEffect, useMemo } from "react";
+import { useState, useCallback, useEffect, useMemo, useRef } from "react";
 import {
   createPoll,
   updatePoll,
@@ -52,6 +52,8 @@ interface PollRow {
 
 type Tab = "news" | "posts" | "write" | "rooms" | "drafts";
 
+type AutoStatus = "idle" | "running" | "done" | "error";
+
 interface Props {
   initialPolls: PollRow[];
 }
@@ -59,11 +61,42 @@ interface Props {
 export default function AdminDashboard({ initialPolls }: Props) {
   const [tab, setTab] = useState<Tab>("news");
   const [polls, setPolls] = useState<PollRow[]>(initialPolls);
+  const [autoStatus, setAutoStatus] = useState<AutoStatus>("idle");
+  const [autoCreated, setAutoCreated] = useState<number | null>(null);
+  const hasAutoRun = useRef(false);
 
   const refreshPolls = useCallback(async () => {
     const fresh = await getPolls();
     setPolls(fresh as PollRow[]);
   }, []);
+
+  const runAutoRefresh = useCallback(async () => {
+    setAutoStatus("running");
+    setAutoCreated(null);
+    try {
+      const res = await fetch("/api/cron/refresh-drafts");
+      const data = await res.json();
+      setAutoCreated(data.created ?? 0);
+      setAutoStatus("done");
+    } catch {
+      setAutoStatus("error");
+    }
+  }, []);
+
+  useEffect(() => {
+    if (hasAutoRun.current) return;
+    hasAutoRun.current = true;
+    runAutoRefresh();
+  }, [runAutoRefresh]);
+
+  const autoLabel =
+    autoStatus === "running"
+      ? "RSS 수집 · AI 후보 생성 중..."
+      : autoStatus === "done"
+      ? `자동 생성 완료 (+${autoCreated}개 후보)`
+      : autoStatus === "error"
+      ? "자동 생성 실패"
+      : "";
 
   return (
     <div className="min-h-screen bg-[#f5f0e8] text-[#1c1712]">
@@ -72,8 +105,28 @@ export default function AdminDashboard({ initialPolls }: Props) {
         <div className="flex items-center gap-3">
           <span className="font-black font-serif text-lg tracking-tight">모두의 투표</span>
           <span className="text-[10px] tracking-widest text-[#c8b890] uppercase">Admin</span>
+          {autoStatus !== "idle" && (
+            <span
+              className={`text-[10px] px-2 py-0.5 font-mono ${
+                autoStatus === "running"
+                  ? "text-[#f0d080] animate-pulse"
+                  : autoStatus === "done"
+                  ? "text-[#80c880]"
+                  : "text-[#f08080]"
+              }`}
+            >
+              {autoLabel}
+            </span>
+          )}
         </div>
         <div className="flex items-center gap-4">
+          <button
+            onClick={runAutoRefresh}
+            disabled={autoStatus === "running"}
+            className="text-[10px] border border-[#c8b890] px-2 py-0.5 text-[#c8b890] hover:bg-[#c8b890] hover:text-[#1c1712] transition-colors disabled:opacity-40"
+          >
+            {autoStatus === "running" ? "실행 중..." : "전체 새로고침"}
+          </button>
           <a href="/" className="text-xs text-[#c8b890] hover:text-white">← 사이트로</a>
           <form action={logoutAdmin}>
             <button className="text-xs border border-[#c8b890] px-3 py-1 hover:bg-[#c8b890] hover:text-[#1c1712] transition-colors">
