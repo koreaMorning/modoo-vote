@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useMemo } from "react";
 import {
   createPoll,
   updatePoll,
@@ -21,10 +21,11 @@ import {
   RoomInput,
 } from "./actions";
 import { Category } from "@/types";
+import { RSS_FEEDS } from "@/lib/rss-feeds";
 
 const CATEGORIES: Category[] = ["정치", "경제", "사회", "문화", "스포츠", "국제", "기술", "환경"];
 
-const RSS_CATEGORIES = ["정치", "경제", "사회", "문화", "국제", "기술", "스포츠", "환경"];
+const RSS_CATEGORIES = ["정치", "경제", "사회", "문화", "국제", "기술", "스포츠", "환경", "연예"];
 
 interface RssItem {
   title: string;
@@ -111,6 +112,7 @@ export default function AdminDashboard({ initialPolls }: Props) {
 /* ─────────────────── 뉴스 스크랩 탭 ─────────────────── */
 function NewsTab() {
   const [rssCategory, setRssCategory] = useState("정치");
+  const [outlet, setOutlet] = useState<string>(() => RSS_FEEDS["정치"][0].name);
   const [items, setItems] = useState<RssItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [selected, setSelected] = useState<RssItem | null>(null);
@@ -120,13 +122,25 @@ function NewsTab() {
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState<{ type: "ok" | "err"; text: string } | null>(null);
 
+  const availableOutlets = useMemo(() => RSS_FEEDS[rssCategory] ?? [], [rssCategory]);
+
+  useEffect(() => {
+    const first = (RSS_FEEDS[rssCategory] ?? [])[0]?.name ?? "";
+    setOutlet(first);
+    setItems([]);
+    setSelected(null);
+    setConverted(null);
+  }, [rssCategory]);
+
   async function fetchRss() {
     setLoading(true);
     setItems([]);
     setSelected(null);
     setConverted(null);
     try {
-      const res = await fetch(`/api/admin/rss?category=${encodeURIComponent(rssCategory)}`);
+      const res = await fetch(
+        `/api/admin/rss?category=${encodeURIComponent(rssCategory)}&source=${encodeURIComponent(outlet)}`
+      );
       const data = await res.json();
       if (data.error) throw new Error(data.error);
       setItems(data.items ?? []);
@@ -189,6 +203,13 @@ function NewsTab() {
             className="border-2 border-[#1c1712] bg-[#f5f0e8] px-3 py-2 text-sm font-medium flex-1"
           >
             {RSS_CATEGORIES.map((c) => <option key={c}>{c}</option>)}
+          </select>
+          <select
+            value={outlet}
+            onChange={(e) => setOutlet(e.target.value)}
+            className="border-2 border-[#c8bfa8] bg-[#f5f0e8] px-3 py-2 text-sm flex-1"
+          >
+            {availableOutlets.map((f) => <option key={f.name} value={f.name}>{f.name}</option>)}
           </select>
           <button
             onClick={fetchRss}

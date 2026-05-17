@@ -1,15 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-
-const CATEGORY_RSS: Record<string, string> = {
-  정치: "https://www.yna.co.kr/rss/politics.xml",
-  경제: "https://www.yna.co.kr/rss/economy.xml",
-  사회: "https://www.yna.co.kr/rss/society.xml",
-  문화: "https://www.yna.co.kr/rss/culture.xml",
-  국제: "https://www.yna.co.kr/rss/international.xml",
-  기술: "https://www.yna.co.kr/rss/it.xml",
-  스포츠: "https://www.yna.co.kr/rss/sports.xml",
-  환경: "https://www.yna.co.kr/rss/ecology.xml",
-};
+import { RSS_FEEDS } from "@/lib/rss-feeds";
 
 interface RssItem {
   title: string;
@@ -43,10 +33,13 @@ function parseRss(xml: string): RssItem[] {
 
 export async function GET(req: NextRequest) {
   const category = req.nextUrl.searchParams.get("category") ?? "정치";
-  const url = CATEGORY_RSS[category] ?? CATEGORY_RSS["정치"];
+  const source = req.nextUrl.searchParams.get("source");
+
+  const feeds = RSS_FEEDS[category] ?? RSS_FEEDS["정치"];
+  const feed = (source ? feeds.find((f) => f.name === source) : null) ?? feeds[0];
 
   try {
-    const res = await fetch(url, {
+    const res = await fetch(feed.url, {
       headers: {
         "User-Agent":
           "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
