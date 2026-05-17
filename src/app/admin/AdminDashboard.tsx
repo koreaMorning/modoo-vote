@@ -598,8 +598,18 @@ function PostsTab({ polls, onRefresh }: { polls: PollRow[]; onRefresh: () => Pro
 type CatWithRooms = CategoryRow & { rooms: RoomRow[] };
 
 const EMPTY_ROOM: RoomInput = {
-  category_id: "", title: "", description: "", slug: "", icon: "💬", sort_order: 0, post_title: "", post_content: "",
+  category_id: "", title: "", description: "", slug: "", icon: "💬", sort_order: 0, post_title: "", post_content: "", youtube_url: "",
 };
+
+function isValidYouTubeUrl(url: string): boolean {
+  if (!url.trim()) return true;
+  return /(?:youtube\.com\/(?:watch\?v=|embed\/)|youtu\.be\/)[a-zA-Z0-9_-]{11}/.test(url);
+}
+
+function getYouTubeEmbedUrl(url: string): string | null {
+  const m = url.match(/(?:youtube\.com\/(?:watch\?v=|embed\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
+  return m ? `https://www.youtube.com/embed/${m[1]}` : null;
+}
 
 function RoomsManagementTab() {
   const [categories, setCategories] = useState<CatWithRooms[]>([]);
@@ -951,6 +961,22 @@ function RoomForm({
           <div className="mt-3 space-y-2">
             <input value={form.post_title ?? ""} onChange={(e) => onChange({ ...form, post_title: e.target.value })} placeholder="게시글 제목" maxLength={200} className="w-full border-2 border-[#c8bfa8] bg-[#f5f0e8] px-3 py-2 text-sm font-bold" />
             <textarea value={form.post_content ?? ""} onChange={(e) => onChange({ ...form, post_content: e.target.value })} placeholder="게시글 내용" rows={8} maxLength={2000} className="w-full border-2 border-[#c8bfa8] bg-[#f5f0e8] px-3 py-2 text-sm leading-relaxed resize-none" />
+            <div>
+              <label className="text-[10px] font-black uppercase tracking-widest text-[#6b6356] block mb-1">유튜브 URL (선택)</label>
+              <input
+                value={form.youtube_url ?? ""}
+                onChange={(e) => onChange({ ...form, youtube_url: e.target.value })}
+                placeholder="https://www.youtube.com/watch?v=... 또는 https://youtu.be/..."
+                className={`w-full border-2 bg-[#f5f0e8] px-3 py-2 text-sm ${
+                  form.youtube_url && !isValidYouTubeUrl(form.youtube_url)
+                    ? "border-red-400"
+                    : "border-[#c8bfa8]"
+                }`}
+              />
+              {form.youtube_url && !isValidYouTubeUrl(form.youtube_url) && (
+                <p className="text-[10px] text-red-600 mt-0.5">유효하지 않은 유튜브 URL입니다</p>
+              )}
+            </div>
           </div>
         )}
       </div>
@@ -967,7 +993,7 @@ function RoomForm({
 
 /* ─────────────────── 직접 작성 탭 ─────────────────── */
 function WriteTab({ onCreated }: { onCreated: () => Promise<void> }) {
-  const empty = { title: "", description: "", category: "정치" as Category, ends_at: "", options: ["", ""] };
+  const empty = { title: "", description: "", category: "정치" as Category, ends_at: "", options: ["", ""], youtube_url: "" };
   const [form, setForm] = useState(empty);
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState<{ type: "ok" | "err"; text: string } | null>(null);
@@ -992,6 +1018,8 @@ function WriteTab({ onCreated }: { onCreated: () => Promise<void> }) {
     if (!form.title.trim()) return setMsg({ type: "err", text: "제목을 입력해주세요" });
     if (form.options.filter((o) => o.trim()).length < 2)
       return setMsg({ type: "err", text: "선택지를 최소 2개 입력해주세요" });
+    if (!isValidYouTubeUrl(form.youtube_url))
+      return setMsg({ type: "err", text: "유효하지 않은 유튜브 URL입니다" });
 
     setSaving(true);
     setMsg(null);
@@ -1048,6 +1076,25 @@ function WriteTab({ onCreated }: { onCreated: () => Promise<void> }) {
             rows={6}
             className="w-full border-2 border-[#c8bfa8] bg-[#f5f0e8] px-3 py-2 text-sm leading-relaxed resize-none"
           />
+        </div>
+
+        <div className="p-5 space-y-1">
+          <label className="text-[10px] font-black uppercase tracking-widest text-[#6b6356] block">
+            유튜브 URL (선택)
+          </label>
+          <input
+            value={form.youtube_url}
+            onChange={(e) => setForm({ ...form, youtube_url: e.target.value })}
+            placeholder="https://www.youtube.com/watch?v=... 또는 https://youtu.be/..."
+            className={`w-full border-2 bg-[#f5f0e8] px-3 py-2 text-sm ${
+              form.youtube_url && !isValidYouTubeUrl(form.youtube_url)
+                ? "border-red-400"
+                : "border-[#c8bfa8]"
+            }`}
+          />
+          {form.youtube_url && !isValidYouTubeUrl(form.youtube_url) && (
+            <p className="text-[10px] text-red-600">유효하지 않은 유튜브 URL입니다</p>
+          )}
         </div>
 
         <div className="p-5 grid grid-cols-2 gap-4">

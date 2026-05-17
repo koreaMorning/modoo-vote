@@ -160,24 +160,47 @@ export default function RoomClient({ room }: { room: Room }) {
       </div>
 
       {/* ── 주제 게시글 (전체 표시) ── */}
-      {room.post_title && room.post_content && (
+      {(room.post_title || room.post_content || room.youtube_url) && (
         <article className="py-8 border-b-4 border-[#1c1712]">
-          <div className="flex items-center gap-3 mb-5">
-            <span className="text-[10px] font-black tracking-widest uppercase bg-black text-white px-2 py-0.5">
-              {room.title}
-            </span>
-            <span className="text-[10px] text-[#8c8070]">
-              {new Date(room.post_updated_at ?? room.created_at).toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric' })}
-            </span>
-          </div>
-          <h2 className="text-2xl font-black font-serif leading-tight text-[#1c1712] mb-6">
-            {room.post_title}
-          </h2>
-          <div className="border-t border-[#d4cfc4] pt-5">
-            <p className="text-sm text-[#2d2520] leading-[1.9] whitespace-pre-wrap font-serif">
-              {room.post_content}
-            </p>
-          </div>
+          {(room.post_title || room.post_content) && (
+            <>
+              <div className="flex items-center gap-3 mb-5">
+                <span className="text-[10px] font-black tracking-widest uppercase bg-black text-white px-2 py-0.5">
+                  {room.title}
+                </span>
+                <span className="text-[10px] text-[#8c8070]">
+                  {new Date(room.post_updated_at ?? room.created_at).toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric' })}
+                </span>
+              </div>
+              {room.post_title && (
+                <h2 className="text-2xl font-black font-serif leading-tight text-[#1c1712] mb-6">
+                  {room.post_title}
+                </h2>
+              )}
+            </>
+          )}
+          {room.youtube_url && (() => {
+            const m = room.youtube_url.match(/(?:youtube\.com\/(?:watch\?v=|embed\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
+            const embedUrl = m ? `https://www.youtube.com/embed/${m[1]}` : null;
+            return embedUrl ? (
+              <div className="relative w-full mb-6" style={{ paddingBottom: '56.25%' }}>
+                <iframe
+                  src={embedUrl}
+                  title="YouTube video"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowFullScreen
+                  className="absolute inset-0 w-full h-full border-0"
+                />
+              </div>
+            ) : null;
+          })()}
+          {room.post_content && (
+            <div className="border-t border-[#d4cfc4] pt-5">
+              <p className="text-sm text-[#2d2520] leading-[1.9] whitespace-pre-wrap font-serif">
+                {room.post_content}
+              </p>
+            </div>
+          )}
         </article>
       )}
 

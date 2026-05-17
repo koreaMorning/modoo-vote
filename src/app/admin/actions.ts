@@ -43,6 +43,7 @@ export interface PollInput {
   category: string;
   options: string[];
   ends_at?: string;
+  youtube_url?: string;
 }
 
 export async function createPoll(data: PollInput): Promise<{ success: boolean; error?: string; id?: string }> {
@@ -56,6 +57,7 @@ export async function createPoll(data: PollInput): Promise<{ success: boolean; e
       category: data.category,
       is_active: true,
       ends_at: data.ends_at || null,
+      youtube_url: data.youtube_url?.trim() || null,
     })
     .select("id")
     .single();
@@ -93,6 +95,7 @@ export async function updatePoll(
       ...(data.description !== undefined && { description: data.description.trim() || null }),
       ...(data.category !== undefined && { category: data.category }),
       ...(data.ends_at !== undefined && { ends_at: data.ends_at || null }),
+      ...(data.youtube_url !== undefined && { youtube_url: data.youtube_url?.trim() || null }),
     })
     .eq("id", id);
 
@@ -172,13 +175,14 @@ export interface RoomRow {
   id: string; category_id: string; title: string; description: string | null;
   slug: string; icon: string | null; post_title: string | null;
   post_content: string | null; post_updated_at: string | null;
+  youtube_url: string | null;
   sort_order: number; created_at: string;
 }
 
 export interface RoomInput {
   category_id: string; title: string; description?: string;
   slug: string; icon?: string; sort_order?: number;
-  post_title?: string; post_content?: string;
+  post_title?: string; post_content?: string; youtube_url?: string;
 }
 
 export async function getCategoriesWithRooms(): Promise<(CategoryRow & { rooms: RoomRow[] })[]> {
@@ -230,6 +234,7 @@ export async function createRoom(data: RoomInput): Promise<{ success: boolean; e
     post_title: data.post_title?.trim() || null,
     post_content: data.post_content?.trim() || null,
     post_updated_at: hasPost ? new Date().toISOString() : null,
+    youtube_url: data.youtube_url?.trim() || null,
   });
   if (error) return { success: false, error: error.message };
   revalidatePath("/rooms");
@@ -249,6 +254,7 @@ export async function updateRoom(id: string, data: RoomInput): Promise<{ success
     post_title: data.post_title?.trim() || null,
     post_content: data.post_content?.trim() || null,
     post_updated_at: hasPost ? new Date().toISOString() : null,
+    youtube_url: data.youtube_url?.trim() || null,
   }).eq("id", id);
   if (error) return { success: false, error: error.message };
   revalidatePath("/rooms");

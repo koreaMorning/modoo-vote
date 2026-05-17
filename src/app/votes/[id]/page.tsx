@@ -111,6 +111,14 @@ export default async function VotePage({ params }: Props) {
     day: "numeric",
   });
 
+  function getYouTubeEmbedUrl(url: string | null): string | null {
+    if (!url) return null;
+    const m = url.match(/(?:youtube\.com\/(?:watch\?v=|embed\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
+    return m ? `https://www.youtube.com/embed/${m[1]}` : null;
+  }
+
+  const youtubeEmbedUrl = getYouTubeEmbedUrl(poll.youtube_url ?? null);
+
   /* Split description into paragraphs for 2-column layout */
   const paragraphs = (poll.description ?? "")
     .split(/\n+/)
@@ -172,6 +180,21 @@ export default async function VotePage({ params }: Props) {
               )}
             </div>
           </header>
+
+          {/* ── YouTube embed ──────────────────────────────── */}
+          {youtubeEmbedUrl && (
+            <div className="my-6">
+              <div className="relative w-full" style={{ paddingBottom: "56.25%" }}>
+                <iframe
+                  src={youtubeEmbedUrl}
+                  title="YouTube video"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowFullScreen
+                  className="absolute inset-0 w-full h-full border-0"
+                />
+              </div>
+            </div>
+          )}
 
           {/* ── 2-column article body ───────────────────────── */}
           {leadPara && (

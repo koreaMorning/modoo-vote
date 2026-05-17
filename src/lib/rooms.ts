@@ -8,6 +8,7 @@ export interface Room {
   post_title: string | null;
   post_content: string | null;
   post_updated_at: string | null;
+  youtube_url: string | null;
   sort_order: number;
   created_at: string;
 }
