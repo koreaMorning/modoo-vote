@@ -6,7 +6,8 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import VoteForm from "@/components/VoteForm";
 import OpinionSection from "@/components/OpinionSection";
-import { ArrowLeft, ArrowRight, Clock, Users, Newspaper } from "lucide-react";
+import { ArrowLeft, ArrowRight, Clock, Users, Newspaper, Eye } from "lucide-react";
+import ViewCounter from "./ViewCounter";
 
 interface Props {
   params: Promise<{ id: string }>;
@@ -132,6 +133,7 @@ export default async function VotePage({ params }: Props) {
 
   return (
     <div className="min-h-screen flex flex-col text-[#1c1712]">
+      <ViewCounter pollId={poll.id} />
       <Header />
       <main className="flex-1 max-w-4xl mx-auto w-full px-4 py-8">
         {/* Back link */}
@@ -171,6 +173,10 @@ export default async function VotePage({ params }: Props) {
               <span className="flex items-center gap-1">
                 <Users size={11} />
                 {totalVotes.toLocaleString()}명 참여
+              </span>
+              <span className="flex items-center gap-1">
+                <Eye size={11} />
+                {(poll.view_count ?? 0).toLocaleString()}회 조회
               </span>
               {poll.ends_at && (
                 <span className="flex items-center gap-1">

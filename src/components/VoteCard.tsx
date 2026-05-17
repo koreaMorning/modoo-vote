@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { Poll } from "@/types";
-import { Clock, Users, CheckCheck } from "lucide-react";
+import { Clock, Users, CheckCheck, Eye, PlayCircle } from "lucide-react";
 
 interface Props {
   poll: Poll;
@@ -41,10 +41,16 @@ export default function VoteCard({ poll, size = "medium", voted = false }: Props
       <Link href={`/votes/${poll.id}`} className="block group">
         <article className="p-6 transition-colors hover:bg-black/[0.02]">
           {/* 부제/메타 — 고딕체 */}
-          <div className="flex items-center gap-2 mb-3 font-sans">
+          <div className="flex items-center gap-2 mb-3 font-sans flex-wrap">
             {isBreaking && (
               <span className="text-[10px] font-black bg-[#c0100a] text-white px-2 py-0.5 tracking-widest">
                 속보
+              </span>
+            )}
+            {poll.youtube_url && (
+              <span className="flex items-center gap-0.5 text-[10px] font-black bg-[#1a5c75] text-white px-1.5 py-0.5 tracking-wide">
+                <PlayCircle size={10} />
+                영상
               </span>
             )}
             <span className={`text-[11px] font-bold px-2 py-0.5 ${catColor}`}>
@@ -71,10 +77,17 @@ export default function VoteCard({ poll, size = "medium", voted = false }: Props
               {poll.description}
             </p>
           )}
-          {/* 참여 정보 — 고딕 */}
+          {/* 참여/조회 정보 — 고딕 */}
           <div className="flex items-center gap-1 text-[11px] text-[#8c8070] font-sans">
             <Users size={11} />
             <span>{totalVotes.toLocaleString()}명 참여</span>
+            {(poll.view_count ?? 0) > 0 && (
+              <>
+                <span className="mx-1 text-[#c8bfa8]">·</span>
+                <Eye size={11} />
+                <span>{(poll.view_count ?? 0).toLocaleString()}회</span>
+              </>
+            )}
             <span className="mx-1.5 text-[#c8bfa8]">·</span>
             <span className="font-bold text-[#1c1712] underline underline-offset-2">투표하러 가기 →</span>
           </div>
@@ -89,10 +102,16 @@ export default function VoteCard({ poll, size = "medium", voted = false }: Props
       <Link href={`/votes/${poll.id}`} className="block group h-full">
         <article className="p-5 h-full transition-colors hover:bg-black/[0.02]">
           {/* 부제/메타 — 고딕 */}
-          <div className="flex items-center gap-1.5 mb-2.5 font-sans">
+          <div className="flex items-center gap-1.5 mb-2.5 font-sans flex-wrap">
             {isBreaking && (
               <span className="text-[9px] font-black bg-[#c0100a] text-white px-1.5 py-0.5 tracking-widest">
                 속보
+              </span>
+            )}
+            {poll.youtube_url && (
+              <span className="flex items-center gap-0.5 text-[9px] font-black bg-[#1a5c75] text-white px-1 py-0.5">
+                <PlayCircle size={9} />
+                영상
               </span>
             )}
             <span className={`text-[11px] font-bold px-1.5 py-0.5 ${catColor}`}>
@@ -114,10 +133,17 @@ export default function VoteCard({ poll, size = "medium", voted = false }: Props
               {poll.description}
             </p>
           )}
-          {/* 참여 정보 — 고딕 */}
-          <div className="flex items-center gap-1 text-[10px] mt-auto text-[#8c8070] font-sans">
+          {/* 참여/조회 정보 — 고딕 */}
+          <div className="flex items-center gap-1 text-[10px] mt-auto text-[#8c8070] font-sans flex-wrap">
             <Users size={10} />
             <span>{totalVotes.toLocaleString()}명 참여</span>
+            {(poll.view_count ?? 0) > 0 && (
+              <>
+                <span className="mx-1 text-[#c8bfa8]">·</span>
+                <Eye size={10} />
+                <span>{(poll.view_count ?? 0).toLocaleString()}회</span>
+              </>
+            )}
           </div>
         </article>
       </Link>
@@ -196,10 +222,16 @@ export default function VoteCard({ poll, size = "medium", voted = false }: Props
           </span>
         )}
         {/* 부제/메타 — 고딕 */}
-        <div className="flex items-center gap-1.5 mb-2 font-sans">
+        <div className="flex items-center gap-1.5 mb-2 font-sans flex-wrap">
           {isBreaking && (
             <span className="text-[9px] font-black bg-[#c0100a] text-white px-1 py-0.5 tracking-wider">
               속보
+            </span>
+          )}
+          {poll.youtube_url && (
+            <span className="flex items-center gap-0.5 text-[9px] font-black bg-[#1a5c75] text-white px-1 py-0.5">
+              <PlayCircle size={9} />
+              영상
             </span>
           )}
           <span className={`text-[11px] font-bold px-1.5 py-0.5 ${catColor}`}>
@@ -220,10 +252,17 @@ export default function VoteCard({ poll, size = "medium", voted = false }: Props
             {poll.description}
           </p>
         )}
-        {/* 참여 정보 — 고딕 */}
-        <div className="flex items-center gap-1 text-[10px] text-[#8c8070] font-sans">
+        {/* 참여/조회 정보 — 고딕 */}
+        <div className="flex items-center gap-1 text-[10px] text-[#8c8070] font-sans flex-wrap">
           <Users size={10} />
           <span>{totalVotes.toLocaleString()}명 참여</span>
+          {(poll.view_count ?? 0) > 0 && (
+            <>
+              <span className="mx-0.5 text-[#c8bfa8]">·</span>
+              <Eye size={10} />
+              <span>{(poll.view_count ?? 0).toLocaleString()}회</span>
+            </>
+          )}
         </div>
       </article>
     </Link>

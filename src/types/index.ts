@@ -19,6 +19,8 @@ export interface Poll {
   created_at: string;
   options?: Option[];
   total_votes?: number;
+  view_count?: number;
+  youtube_url?: string | null;
 }
 
 export interface Option {

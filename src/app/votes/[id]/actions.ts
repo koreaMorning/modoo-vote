@@ -19,6 +19,11 @@ async function getOrCreateFingerprint(): Promise<string> {
   return newId;
 }
 
+export async function incrementViewCount(pollId: string): Promise<void> {
+  const supabase = await createClient();
+  await supabase.rpc("increment_poll_view_count", { poll_id_param: pollId });
+}
+
 export async function castVote(
   pollId: string,
   optionId: string

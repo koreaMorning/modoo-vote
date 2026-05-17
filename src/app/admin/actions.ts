@@ -274,7 +274,7 @@ export async function getPolls() {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("polls")
-    .select("id, title, category, is_active, is_breaking, created_at, ends_at, options(votes_count)")
+    .select("id, title, category, is_active, is_breaking, created_at, ends_at, view_count, options(votes_count)")
     .order("created_at", { ascending: false });
 
   if (error) return [];
@@ -287,4 +287,26 @@ export async function getPolls() {
     ),
     options: undefined,
   }));
+}
+
+export async function getCategoryQuotas(): Promise<Record<string, number>> {
+  const supabase = await createClient();
+  const { data } = await supabase.from("category_quotas").select("*");
+  const result: Record<string, number> = {};
+  (data ?? []).forEach((row: { category: string; target_count: number }) => {
+    result[row.category] = row.target_count;
+  });
+  return result;
+}
+
+export async function upsertCategoryQuota(
+  category: string,
+  targetCount: number
+): Promise<{ success: boolean; error?: string }> {
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("category_quotas")
+    .upsert({ category, target_count: targetCount }, { onConflict: "category" });
+  if (error) return { success: false, error: error.message };
+  return { success: true };
 }

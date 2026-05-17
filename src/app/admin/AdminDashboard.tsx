@@ -15,11 +15,14 @@ import {
   createRoom,
   updateRoom,
   deleteRoom,
+  getCategoryQuotas,
+  upsertCategoryQuota,
   PollInput,
   CategoryRow,
   RoomRow,
   RoomInput,
 } from "./actions";
+import { Eye, PlayCircle } from "lucide-react";
 import { Category } from "@/types";
 import { RSS_FEEDS } from "@/lib/rss-feeds";
 
@@ -43,6 +46,7 @@ interface PollRow {
   created_at: string;
   ends_at: string | null;
   total_votes: number;
+  view_count: number;
 }
 
 type Tab = "news" | "posts" | "write" | "rooms";
@@ -412,6 +416,136 @@ function ConvertedEditor({
   );
 }
 
+/* ─────────────────── 카테고리 현황 패널 ─────────────────── */
+const CAT_FILL: Record<string, string> = {
+  정치: "#c9b99a", 경제: "#a8b8c4", 사회: "#a8c0a8", 문화: "#b8a8c4",
+  스포츠: "#c4b08a", 국제: "#a0a8c0", 기술: "#90b8b8", 환경: "#98b898",
+};
+
+function CategoryStats({
+  polls, quotas, onQuotaChange,
+}: {
+  polls: PollRow[];
+  quotas: Record<string, number>;
+  onQuotaChange: (cat: string, target: number) => void;
+}) {
+  const [editingCat, setEditingCat] = useState<string | null>(null);
+  const [editVal, setEditVal] = useState(10);
+
+  const counts = Object.fromEntries(
+    CATEGORIES.map((c) => [c, polls.filter((p) => p.category === c).length])
+  );
+  const total = polls.length;
+
+  async function handleSave(cat: string) {
+    await upsertCategoryQuota(cat, editVal);
+    onQuotaChange(cat, editVal);
+    setEditingCat(null);
+  }
+
+  return (
+    <div className="border-2 border-[#1c1712] mb-6">
+      <div className="border-b-2 border-[#1c1712] bg-[#1c1712] text-[#f0e5c0] px-4 py-2 flex items-center justify-between">
+        <span className="text-[10px] font-black tracking-[0.25em] uppercase">카테고리 현황</span>
+        <span className="text-[10px] text-[#c8b890]">전체 {total}개</span>
+      </div>
+
+      {/* 비율 분포 바 */}
+      {total > 0 && (
+        <div className="flex h-4 overflow-hidden border-b border-[#c8bfa8]">
+          {CATEGORIES.map((cat) => {
+            const cnt = counts[cat] ?? 0;
+            if (cnt === 0) return null;
+            const pct = (cnt / total) * 100;
+            return (
+              <div
+                key={cat}
+                style={{ width: `${pct}%`, backgroundColor: CAT_FILL[cat] }}
+                className="h-full shrink-0 relative group"
+                title={`${cat} ${cnt}개 (${pct.toFixed(1)}%)`}
+              >
+                {pct > 8 && (
+                  <span className="absolute inset-0 flex items-center justify-center text-[8px] font-black text-[#1c1712]/70 leading-none">
+                    {cat}
+                  </span>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* 카테고리별 행 */}
+      <div className="divide-y divide-[#e8e0d0]">
+        {CATEGORIES.map((cat) => {
+          const count = counts[cat] ?? 0;
+          const target = quotas[cat] ?? 10;
+          const pct = Math.min(100, target > 0 ? (count / target) * 100 : 0);
+          const statusColor = pct >= 100 ? "text-green-700" : pct >= 70 ? "text-amber-600" : "text-red-600";
+          const barColor = pct >= 100 ? "#16a34a" : pct >= 70 ? "#d97706" : "#dc2626";
+
+          return (
+            <div key={cat} className="px-4 py-2.5 flex items-center gap-3">
+              {/* 카테고리 이름 */}
+              <div
+                className="text-[10px] font-black w-10 shrink-0 px-1.5 py-0.5 text-center"
+                style={{ backgroundColor: CAT_FILL[cat] }}
+              >
+                {cat}
+              </div>
+
+              {/* 진행 바 */}
+              <div className="flex-1 h-2.5 bg-[#e8e0d0] overflow-hidden">
+                <div
+                  style={{ width: `${pct}%`, backgroundColor: barColor }}
+                  className="h-full transition-all duration-300"
+                />
+              </div>
+
+              {/* 수치 */}
+              <span className={`text-[11px] font-mono font-bold w-10 text-right shrink-0 ${statusColor}`}>
+                {count}/{target}
+              </span>
+
+              {/* 인라인 편집 */}
+              {editingCat === cat ? (
+                <div className="flex items-center gap-1 shrink-0">
+                  <input
+                    type="number"
+                    value={editVal}
+                    onChange={(e) => setEditVal(Number(e.target.value))}
+                    min={1} max={99}
+                    className="w-10 border border-[#c8bfa8] bg-[#f5f0e8] text-center text-[11px] py-0.5"
+                  />
+                  <button
+                    onClick={() => handleSave(cat)}
+                    className="text-[9px] font-bold border border-green-600 text-green-700 px-1.5 py-0.5 hover:bg-green-50"
+                  >
+                    저장
+                  </button>
+                  <button
+                    onClick={() => setEditingCat(null)}
+                    className="text-[9px] border border-[#c8bfa8] text-[#8c8070] px-1.5 py-0.5 hover:border-[#1c1712]"
+                  >
+                    취소
+                  </button>
+                </div>
+              ) : (
+                <button
+                  onClick={() => { setEditingCat(cat); setEditVal(target); }}
+                  className="text-[9px] border border-[#c8bfa8] text-[#8c8070] px-2 py-0.5 hover:border-[#1c1712] hover:text-[#1c1712] shrink-0 transition-colors"
+                >
+                  목표 수정
+                </button>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 /* ─────────────────── 게시글 관리 탭 ─────────────────── */
 function PostsTab({ polls, onRefresh }: { polls: PollRow[]; onRefresh: () => Promise<void> }) {
   const [editId, setEditId] = useState<string | null>(null);
@@ -422,6 +556,12 @@ function PostsTab({ polls, onRefresh }: { polls: PollRow[]; onRefresh: () => Pro
   });
   const [saving, setSaving] = useState<string | null>(null);
   const [msg, setMsg] = useState<{ type: "ok" | "err"; text: string } | null>(null);
+  const [quotas, setQuotas] = useState<Record<string, number>>({});
+  const [showStats, setShowStats] = useState(true);
+
+  useEffect(() => {
+    getCategoryQuotas().then(setQuotas);
+  }, []);
 
   function startEdit(p: PollRow) {
     setEditId(p.id);
@@ -476,13 +616,30 @@ function PostsTab({ polls, onRefresh }: { polls: PollRow[]; onRefresh: () => Pro
     <div>
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-sm font-black uppercase tracking-widest">게시글 관리 ({polls.length}개)</h2>
-        <button
-          onClick={onRefresh}
-          className="text-xs border border-[#c8bfa8] px-3 py-1 hover:border-[#1c1712] transition-colors"
-        >
-          새로고침
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={() => setShowStats((v) => !v)}
+            className="text-xs border border-[#c8bfa8] px-3 py-1 hover:border-[#1c1712] transition-colors"
+          >
+            {showStats ? "현황 숨기기" : "카테고리 현황"}
+          </button>
+          <button
+            onClick={onRefresh}
+            className="text-xs border border-[#c8bfa8] px-3 py-1 hover:border-[#1c1712] transition-colors"
+          >
+            새로고침
+          </button>
+        </div>
       </div>
+
+      {/* 카테고리 현황 패널 */}
+      {showStats && (
+        <CategoryStats
+          polls={polls}
+          quotas={quotas}
+          onQuotaChange={(cat, target) => setQuotas((prev) => ({ ...prev, [cat]: target }))}
+        />
+      )}
 
       {msg && (
         <div
@@ -546,7 +703,7 @@ function PostsTab({ polls, onRefresh }: { polls: PollRow[]; onRefresh: () => Pro
               /* Row display */
               <div className="flex items-start gap-4">
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-1">
+                  <div className="flex items-center gap-2 mb-1 flex-wrap">
                     <span className="text-[10px] font-bold bg-[#1c1712] text-[#f0e5c0] px-2 py-0.5">
                       {p.category}
                     </span>
@@ -559,8 +716,12 @@ function PostsTab({ polls, onRefresh }: { polls: PollRow[]; onRefresh: () => Pro
                     >
                       {p.is_active ? "활성" : "비활성"}
                     </span>
-                    <span className="text-[10px] text-[#8c8070]">
+                    <span className="text-[10px] text-[#8c8070] flex items-center gap-0.5">
                       {p.total_votes.toLocaleString()}명 참여
+                    </span>
+                    <span className="text-[10px] text-[#8c8070] flex items-center gap-0.5">
+                      <Eye size={9} />
+                      {(p.view_count ?? 0).toLocaleString()}
                     </span>
                   </div>
                   <p className="text-sm font-bold leading-snug truncate">{p.title}</p>
@@ -569,7 +730,7 @@ function PostsTab({ polls, onRefresh }: { polls: PollRow[]; onRefresh: () => Pro
                     {p.ends_at && ` · 마감 ${new Date(p.ends_at).toLocaleDateString("ko-KR")}`}
                   </p>
                 </div>
-                <div className="flex items-center gap-2 shrink-0">
+                <div className="flex items-center gap-2 shrink-0 flex-wrap justify-end">
                   <a
                     href={`/votes/${p.id}`}
                     target="_blank"
