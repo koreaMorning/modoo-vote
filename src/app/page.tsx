@@ -23,6 +23,7 @@ const CATEGORY_ORDER = [
   "국제",
   "기술",
   "환경",
+  "연예",
 ];
 
 export default async function HomePage({ searchParams }: Props) {
@@ -113,6 +114,7 @@ export default async function HomePage({ searchParams }: Props) {
     국제: "bg-[#a0a8c0] text-[#1a1a3a]",
     기술: "bg-[#90b8b8] text-[#0a2828]",
     환경: "bg-[#98b898] text-[#0a2810]",
+    연예: "bg-[#c8a0b4] text-[#3a1028]",
   };
 
   function getDaysLeft(endsAt: string | null): string {

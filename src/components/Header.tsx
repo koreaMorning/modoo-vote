@@ -10,6 +10,7 @@ const categories: Category[] = [
   "국제",
   "기술",
   "환경",
+  "연예",
 ];
 
 export default function Header() {

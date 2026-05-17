@@ -28,7 +28,7 @@ import { Eye, PlayCircle } from "lucide-react";
 import { Category } from "@/types";
 import { RSS_FEEDS } from "@/lib/rss-feeds";
 
-const CATEGORIES: Category[] = ["정치", "경제", "사회", "문화", "스포츠", "국제", "기술", "환경"];
+const CATEGORIES: Category[] = ["정치", "경제", "사회", "문화", "스포츠", "국제", "기술", "환경", "연예"];
 
 const RSS_CATEGORIES = ["정치", "경제", "사회", "문화", "국제", "기술", "스포츠", "환경", "연예"];
 
@@ -479,6 +479,7 @@ function ConvertedEditor({
 const CAT_FILL: Record<string, string> = {
   정치: "#c9b99a", 경제: "#a8b8c4", 사회: "#a8c0a8", 문화: "#b8a8c4",
   스포츠: "#c4b08a", 국제: "#a0a8c0", 기술: "#90b8b8", 환경: "#98b898",
+  연예: "#c8a0b4",
 };
 
 function CategoryStats({

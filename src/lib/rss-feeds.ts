@@ -72,5 +72,7 @@ export const RSS_FEEDS: Record<string, RssFeed[]> = {
     { name: "경향신문",  url: "https://www.khan.co.kr/rss/rssdata/entNewsRss.xml" },
     { name: "엑스포츠뉴스", url: "https://www.xportsnews.com/?ac=rss&sec=10" },
     { name: "스타뉴스",  url: "https://star.mt.co.kr/rss.rss" },
+    { name: "OSEN",      url: "https://osen.mt.co.kr/rss/rss.xml" },
+    { name: "마이데일리", url: "https://www.mydaily.co.kr/rss/rss.xml" },
   ],
 };
