@@ -1,20 +1,13 @@
 import Link from "next/link";
 import { Category } from "@/types";
 import { getCurrentEdition } from "@/lib/publishing";
+import { createClient } from "@/lib/supabase/server";
 
 const categories: Category[] = [
-  "정치",
-  "경제",
-  "사회",
-  "문화",
-  "스포츠",
-  "국제",
-  "기술",
-  "환경",
-  "연예",
+  "정치", "경제", "사회", "문화", "스포츠", "국제", "기술", "환경", "연예",
 ];
 
-export default function Header() {
+export default async function Header() {
   const today = new Date().toLocaleDateString("ko-KR", {
     year: "numeric",
     month: "long",
@@ -23,7 +16,7 @@ export default function Header() {
     timeZone: "Asia/Seoul",
   });
 
-  const openDateMs = Date.UTC(2026, 4, 1); // 2026-05-01 UTC
+  const openDateMs = Date.UTC(2026, 4, 1);
   const todayMs = Date.UTC(
     new Date().getUTCFullYear(),
     new Date().getUTCMonth(),
@@ -32,6 +25,20 @@ export default function Header() {
   const issueNumber = Math.max(1, Math.floor((todayMs - openDateMs) / 86400000) + 1);
 
   const { edition } = getCurrentEdition();
+
+  let hasActiveTheme = false;
+  try {
+    const supabase = await createClient();
+    const { data } = await supabase
+      .from("themes")
+      .select("id")
+      .eq("is_active", true)
+      .limit(1)
+      .maybeSingle();
+    hasActiveTheme = !!data;
+  } catch {
+    // themes table might not exist yet
+  }
 
   return (
     <header className="border-b-4 border-black">
@@ -58,18 +65,34 @@ export default function Header() {
         </div>
 
         <nav className="flex justify-center gap-0 py-1 flex-wrap">
-          {categories.map((cat, i) => (
+          {categories.map((cat) => (
             <Link
               key={cat}
-              href={`/?category=${encodeURIComponent(cat)}`}
-              className={`px-4 py-1 text-sm font-medium hover:bg-black hover:text-white transition-colors border-r border-[#c8bfa8]`}
+              href={`/category/${encodeURIComponent(cat)}`}
+              className="px-4 py-1 text-sm font-medium hover:bg-black hover:text-white transition-colors border-r border-[#c8bfa8]"
             >
               {cat}
             </Link>
           ))}
+
+          {/* 테마 탭 */}
+          <Link
+            href="/themes"
+            className={`px-4 py-1 text-sm font-bold transition-colors border-l-2 ml-2 ${
+              hasActiveTheme
+                ? "border-[#8b3a8b] text-[#8b3a8b] hover:bg-[#8b3a8b] hover:text-white"
+                : "border-[#6b6356] text-[#6b6356] hover:bg-[#1c1712] hover:text-white"
+            }`}
+          >
+            {hasActiveTheme && (
+              <span className="inline-block w-1.5 h-1.5 rounded-full bg-[#8b3a8b] mr-1 mb-0.5" />
+            )}
+            테마
+          </Link>
+
           <Link
             href="/schedule"
-            className="px-4 py-1 text-sm font-bold hover:bg-[#1c1712] hover:text-[#f0e5c0] transition-colors text-[#8c3a00] border-l-2 border-[#8c3a00] ml-2"
+            className="px-4 py-1 text-sm font-bold hover:bg-[#1c1712] hover:text-[#f0e5c0] transition-colors text-[#8c3a00] border-l-2 border-[#8c3a00] ml-1"
           >
             OTT 편성표
           </Link>

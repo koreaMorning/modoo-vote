@@ -463,3 +463,157 @@ export async function deleteDraft(id: string): Promise<{ success: boolean; error
   if (error) return { success: false, error: error.message };
   return { success: true };
 }
+
+/* ─────────────────── 테마 ─────────────────── */
+
+export interface ThemeRow {
+  id: string;
+  title: string;
+  description: string | null;
+  end_date: string | null;
+  is_active: boolean;
+  sort_order: number;
+  created_at: string;
+}
+
+export interface ThemeInput {
+  title: string;
+  description?: string;
+  end_date?: string;
+  is_active?: boolean;
+  sort_order?: number;
+}
+
+export async function getThemes(onlyActive = false): Promise<(ThemeRow & { poll_count: number })[]> {
+  const supabase = await createClient();
+  const q = supabase
+    .from("themes")
+    .select("*, theme_polls(count)")
+    .order("sort_order", { ascending: true })
+    .order("created_at", { ascending: false });
+  const { data } = await (onlyActive ? q.eq("is_active", true) : q);
+  return (data ?? []).map((t: ThemeRow & { theme_polls: { count: number }[] }) => ({
+    ...t,
+    poll_count: t.theme_polls?.[0]?.count ?? 0,
+    theme_polls: undefined,
+  }));
+}
+
+export async function createTheme(
+  data: ThemeInput
+): Promise<{ success: boolean; error?: string; id?: string }> {
+  const supabase = createAdminClient();
+  const { data: row, error } = await supabase
+    .from("themes")
+    .insert({
+      title: data.title.trim(),
+      description: data.description?.trim() || null,
+      end_date: data.end_date || null,
+      is_active: data.is_active ?? true,
+      sort_order: data.sort_order ?? 0,
+    })
+    .select("id")
+    .single();
+  if (error) return { success: false, error: error.message };
+  revalidatePath("/themes");
+  return { success: true, id: row.id };
+}
+
+export async function updateTheme(
+  id: string,
+  data: ThemeInput
+): Promise<{ success: boolean; error?: string }> {
+  const supabase = createAdminClient();
+  const { error } = await supabase
+    .from("themes")
+    .update({
+      title: data.title.trim(),
+      description: data.description?.trim() || null,
+      end_date: data.end_date || null,
+      is_active: data.is_active ?? true,
+      sort_order: data.sort_order ?? 0,
+    })
+    .eq("id", id);
+  if (error) return { success: false, error: error.message };
+  revalidatePath("/themes");
+  revalidatePath(`/themes/${id}`);
+  return { success: true };
+}
+
+export async function deleteTheme(id: string): Promise<{ success: boolean; error?: string }> {
+  const supabase = createAdminClient();
+  const { error } = await supabase.from("themes").delete().eq("id", id);
+  if (error) return { success: false, error: error.message };
+  revalidatePath("/themes");
+  return { success: true };
+}
+
+export async function getThemeLinkedItems(
+  id: string
+): Promise<{ pollIds: string[]; roomSlugs: string[] }> {
+  const supabase = await createClient();
+  const [{ data: tPolls }, { data: tRooms }] = await Promise.all([
+    supabase.from("theme_polls").select("poll_id").eq("theme_id", id),
+    supabase.from("theme_rooms").select("room_slug").eq("theme_id", id),
+  ]);
+  return {
+    pollIds: (tPolls ?? []).map((r: { poll_id: string }) => r.poll_id),
+    roomSlugs: (tRooms ?? []).map((r: { room_slug: string }) => r.room_slug),
+  };
+}
+
+export async function addThemePoll(
+  themeId: string,
+  pollId: string
+): Promise<{ success: boolean; error?: string }> {
+  const supabase = createAdminClient();
+  const { error } = await supabase
+    .from("theme_polls")
+    .upsert({ theme_id: themeId, poll_id: pollId });
+  if (error) return { success: false, error: error.message };
+  revalidatePath(`/themes/${themeId}`);
+  return { success: true };
+}
+
+export async function removeThemePoll(
+  themeId: string,
+  pollId: string
+): Promise<{ success: boolean; error?: string }> {
+  const supabase = createAdminClient();
+  const { error } = await supabase
+    .from("theme_polls")
+    .delete()
+    .eq("theme_id", themeId)
+    .eq("poll_id", pollId);
+  if (error) return { success: false, error: error.message };
+  revalidatePath(`/themes/${themeId}`);
+  return { success: true };
+}
+
+export async function addThemeRoom(
+  themeId: string,
+  roomSlug: string
+): Promise<{ success: boolean; error?: string }> {
+  const supabase = createAdminClient();
+  const { error } = await supabase
+    .from("theme_rooms")
+    .upsert({ theme_id: themeId, room_slug: roomSlug });
+  if (error) return { success: false, error: error.message };
+  revalidatePath(`/themes/${themeId}`);
+  return { success: true };
+}
+
+export async function removeThemeRoom(
+  themeId: string,
+  roomSlug: string
+): Promise<{ success: boolean; error?: string }> {
+  const supabase = createAdminClient();
+  const { error } = await supabase
+    .from("theme_rooms")
+    .delete()
+    .eq("theme_id", themeId)
+    .eq("room_slug", roomSlug);
+  if (error) return { success: false, error: error.message };
+  revalidatePath(`/themes/${themeId}`);
+  return { success: true };
+}

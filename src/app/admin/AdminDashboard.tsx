@@ -27,6 +27,7 @@ import {
 } from "./actions";
 import { formatPublishLabel, toKSTDatetimeLocal, fromKSTDatetimeLocal } from "@/lib/publishing";
 import DraftsTab from "./DraftsTab";
+import ThemesTab from "./ThemesTab";
 import { Eye, PlayCircle } from "lucide-react";
 import { Category } from "@/types";
 import { RSS_FEEDS } from "@/lib/rss-feeds";
@@ -59,7 +60,7 @@ interface PollRow {
   view_count: number;
 }
 
-type Tab = "news" | "posts" | "write" | "rooms" | "drafts";
+type Tab = "news" | "posts" | "write" | "rooms" | "drafts" | "themes";
 
 type AutoStatus = "idle" | "running" | "done" | "error";
 
@@ -160,7 +161,7 @@ export default function AdminDashboard({ initialPolls }: Props) {
       {/* Tabs */}
       <div className="border-b-2 border-[#1c1712] bg-[#ede0c0]">
         <div className="max-w-6xl mx-auto px-6 flex gap-0">
-          {([["news", "뉴스 스크랩"], ["drafts", "AI 후보"], ["posts", "게시글 관리"], ["write", "직접 작성"], ["rooms", "토론방 관리"]] as [Tab, string][]).map(
+          {([["news", "뉴스 스크랩"], ["drafts", "AI 후보"], ["posts", "게시글 관리"], ["write", "직접 작성"], ["rooms", "토론방 관리"], ["themes", "테마 관리"]] as [Tab, string][]).map(
             ([key, label]) => (
               <button
                 key={key}
@@ -184,6 +185,7 @@ export default function AdminDashboard({ initialPolls }: Props) {
         {tab === "posts" && <PostsTab polls={polls} onRefresh={refreshPolls} onPublishNow={handlePublishNow} />}
         {tab === "write" && <WriteTab onCreated={refreshPolls} />}
         {tab === "rooms" && <RoomsManagementTab />}
+        {tab === "themes" && <ThemesTab />}
       </div>
     </div>
   );
