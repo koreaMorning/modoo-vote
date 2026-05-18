@@ -58,7 +58,7 @@ export async function submitOpinion(
   content: string,
   stance: string | null,
   nickname: string
-): Promise<{ success: boolean; error?: string }> {
+): Promise<{ success: boolean; error?: string; opinion?: Record<string, unknown> | null }> {
   const trimmed = content?.trim() ?? "";
   if (!trimmed || trimmed.length > 100) {
     return { success: false, error: "invalid" };
@@ -67,7 +67,6 @@ export async function submitOpinion(
   const fingerprint = await getOrCreateFingerprint();
   const supabase = await createClient();
 
-  // nickname 컬럼이 없을 수 있으므로 fallback 처리
   const nickTrimmed = nickname.trim() || "익명";
   let { error } = await supabase.from("poll_opinions").insert({
     poll_id: pollId,
@@ -78,7 +77,6 @@ export async function submitOpinion(
   });
 
   if (error) {
-    // nickname 컬럼 미존재 시 컬럼 없이 재시도
     const fallback = await supabase.from("poll_opinions").insert({
       poll_id: pollId,
       content: trimmed,
@@ -93,8 +91,18 @@ export async function submitOpinion(
     return { success: false, error: "server_error" };
   }
 
+  // 방금 삽입된 의견을 반환해서 클라이언트가 router.refresh() 없이 상태 갱신 가능하게 함
+  const { data: created } = await supabase
+    .from("poll_opinions")
+    .select("id, content, stance, voter_fingerprint, created_at, likes_count, dislikes_count, nickname")
+    .eq("poll_id", pollId)
+    .eq("voter_fingerprint", fingerprint)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
   revalidatePath(`/votes/${pollId}`);
-  return { success: true };
+  return { success: true, opinion: created };
 }
 
 export async function updateOpinion(

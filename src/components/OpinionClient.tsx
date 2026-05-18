@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect, useTransition, useRef } from "react";
-import { useRouter } from "next/navigation";
 import {
   submitOpinion,
   updateOpinion,
@@ -57,7 +56,6 @@ export default function OpinionClient({
   pollId,
   isProscon,
 }: Props) {
-  const router = useRouter();
   const [opinions, setOpinions] = useState(initialOpinions);
   const [myReactions, setMyReactions] = useState(initialMyReactions);
   const myTempIds = useRef(new Set<string>());
@@ -82,14 +80,6 @@ export default function OpinionClient({
     setNickname(name);
     setConfirming(false);
   }
-
-  useEffect(() => {
-    if (pendingReactionIds.current.size > 0) return;
-    if (myTempIds.current.size > 0 && initialOpinions.length === 0) return;
-    setOpinions(initialOpinions);
-    setMyReactions(initialMyReactions);
-    myTempIds.current.clear();
-  }, [initialOpinions, initialMyReactions]);
 
   // 투표 선택 시 스탠스 자동 설정
   useEffect(() => {
@@ -137,7 +127,16 @@ export default function OpinionClient({
     startSubmitTransition(async () => {
       const result = await submitOpinion(pollId, trimmed, stance || null, nickname);
       if (result.success) {
-        router.refresh();
+        // router.refresh() 대신 서버에서 반환된 실제 의견으로 temp 항목 교체
+        // — router.refresh()는 cookies() 설정으로 인한 서버 재렌더를 유발해 로컬 상태를 초기화하는 버그의 원인
+        setOpinions((prev) => {
+          const withoutTemp = prev.filter((o) => o.id !== tempId);
+          if (result.opinion) {
+            return [...withoutTemp, result.opinion as unknown as OpinionItem];
+          }
+          return withoutTemp;
+        });
+        myTempIds.current.delete(tempId);
       } else {
         setOpinions((prev) => prev.filter((o) => o.id !== tempId));
         myTempIds.current.delete(tempId);
