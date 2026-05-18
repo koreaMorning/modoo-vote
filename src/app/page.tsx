@@ -10,7 +10,7 @@ import { Room } from "@/lib/rooms";
 import { rankPolls } from "@/lib/ranking";
 
 const CATEGORY_ORDER = [
-  "정치", "경제", "사회", "문화", "스포츠", "국제", "기술", "환경", "연예",
+  "정치", "경제", "사회", "국제", "문화", "스포츠", "연예",
 ];
 
 export default async function HomePage() {

@@ -2,11 +2,9 @@ export type Category =
   | "정치"
   | "경제"
   | "사회"
+  | "국제"
   | "문화"
   | "스포츠"
-  | "국제"
-  | "기술"
-  | "환경"
   | "연예";
 
 export interface Poll {

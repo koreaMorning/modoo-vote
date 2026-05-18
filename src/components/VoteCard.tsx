@@ -22,11 +22,9 @@ const categoryColors: Record<string, string> = {
   정치: "bg-[#c9b99a] text-[#3d2b1f]",
   경제: "bg-[#a8b8c4] text-[#1a2e3a]",
   사회: "bg-[#a8c0a8] text-[#1a301a]",
+  국제: "bg-[#a0a8c0] text-[#1a1a3a]",
   문화: "bg-[#b8a8c4] text-[#2a1a3a]",
   스포츠: "bg-[#c4b08a] text-[#3a2010]",
-  국제: "bg-[#a0a8c0] text-[#1a1a3a]",
-  기술: "bg-[#90b8b8] text-[#0a2828]",
-  환경: "bg-[#98b898] text-[#0a2810]",
   연예: "bg-[#c8a0b4] text-[#3a1028]",
 };
 

@@ -4,7 +4,7 @@ import { getCurrentEdition } from "@/lib/publishing";
 import { createClient } from "@/lib/supabase/server";
 
 const categories: Category[] = [
-  "정치", "경제", "사회", "문화", "스포츠", "국제", "기술", "환경", "연예",
+  "정치", "경제", "사회", "국제", "문화", "스포츠", "연예",
 ];
 
 export default async function Header() {

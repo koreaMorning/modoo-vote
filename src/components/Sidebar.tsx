@@ -125,7 +125,7 @@ export default async function Sidebar({ pollId }: Props) {
           분야별 투표
         </p>
         <div className="grid grid-cols-2 gap-1">
-          {["정치", "경제", "사회", "문화", "스포츠", "기술"].map((cat) => (
+          {["정치", "경제", "사회", "국제", "문화", "스포츠"].map((cat) => (
             <Link
               key={cat}
               href={`/category/${encodeURIComponent(cat)}`}

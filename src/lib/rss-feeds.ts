@@ -36,13 +36,6 @@ export const RSS_FEEDS: Record<string, RssFeed[]> = {
     { name: "MBC",     url: G("사회 site:imbc.com") },
     { name: "SBS",     url: G("사회 site:sbs.co.kr") },
   ],
-  문화: [
-    { name: "연합뉴스",  url: "https://www.yna.co.kr/rss/culture.xml" },
-    { name: "조선일보",  url: "https://www.chosun.com/arc/outboundfeeds/rss/category/culture-life/?outputType=xml" },
-    { name: "한겨레",   url: "https://www.hani.co.kr/rss/" },
-    { name: "경향신문", url: "https://www.khan.co.kr/rss/rssdata/total_news.xml" },
-    { name: "MBC",     url: G("문화 site:imbc.com") },
-  ],
   국제: [
     { name: "연합뉴스",  url: "https://www.yna.co.kr/rss/international.xml" },
     { name: "조선일보",  url: "https://www.chosun.com/arc/outboundfeeds/rss/category/international/?outputType=xml" },
@@ -51,11 +44,12 @@ export const RSS_FEEDS: Record<string, RssFeed[]> = {
     { name: "KBS",     url: "https://news.kbs.co.kr/rss/rss.do" },
     { name: "YTN",     url: G("국제 site:ytn.co.kr") },
   ],
-  기술: [
-    { name: "조선일보",  url: "https://www.chosun.com/arc/outboundfeeds/rss/category/it-science/?outputType=xml" },
-    { name: "매일경제", url: "https://www.mk.co.kr/rss/50300009/" },
-    { name: "MBC",     url: G("IT 기술 site:imbc.com") },
-    { name: "YTN",     url: G("IT 기술 site:ytn.co.kr") },
+  문화: [
+    { name: "연합뉴스",  url: "https://www.yna.co.kr/rss/culture.xml" },
+    { name: "조선일보",  url: "https://www.chosun.com/arc/outboundfeeds/rss/category/culture-life/?outputType=xml" },
+    { name: "한겨레",   url: "https://www.hani.co.kr/rss/" },
+    { name: "경향신문", url: "https://www.khan.co.kr/rss/rssdata/total_news.xml" },
+    { name: "MBC",     url: G("문화 site:imbc.com") },
   ],
   스포츠: [
     { name: "연합뉴스",  url: "https://www.yna.co.kr/rss/sports.xml" },
@@ -63,11 +57,6 @@ export const RSS_FEEDS: Record<string, RssFeed[]> = {
     { name: "한겨레",   url: "https://www.hani.co.kr/rss/" },
     { name: "MBC",     url: G("스포츠 site:imbc.com") },
     { name: "SBS",     url: G("스포츠 site:sbs.co.kr") },
-  ],
-  환경: [
-    { name: "조선일보",  url: G("환경 기후변화 site:chosun.com") },
-    { name: "경향신문", url: "https://www.khan.co.kr/rss/rssdata/total_news.xml" },
-    { name: "YTN",     url: G("환경 기후 site:ytn.co.kr") },
   ],
   연예: [
     { name: "연합뉴스",  url: "https://www.yna.co.kr/rss/entertainment.xml" },
