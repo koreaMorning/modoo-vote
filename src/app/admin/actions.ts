@@ -1,6 +1,7 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { cookies } from "next/headers";
 import { revalidatePath, unstable_noStore as noStore } from "next/cache";
 import { redirect } from "next/navigation";
@@ -140,12 +141,14 @@ export async function togglePinned(id: string, isPinned: boolean): Promise<{ suc
 }
 
 export async function publishPollNow(id: string): Promise<{ success: boolean; error?: string }> {
-  const supabase = await createClient();
-  const { error } = await supabase
+  const supabase = createAdminClient();
+  const { data, error } = await supabase
     .from("polls")
     .update({ publish_at: new Date().toISOString(), publish_status: "published" })
-    .eq("id", id);
+    .eq("id", id)
+    .select("id, publish_status, publish_at");
   if (error) return { success: false, error: error.message };
+  if (!data || data.length === 0) return { success: false, error: "DB 업데이트 실패: 권한 오류 또는 존재하지 않는 게시글" };
   revalidatePath("/");
   revalidatePath("/admin");
   return { success: true };
