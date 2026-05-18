@@ -996,7 +996,8 @@ function PostsTab({ polls, onRefresh, onPublishNow }: { polls: PollRow[]; onRefr
 type CatWithRooms = CategoryRow & { rooms: RoomRow[] };
 
 const EMPTY_ROOM: RoomInput = {
-  category_id: "", title: "", description: "", slug: "", icon: "💬", sort_order: 0, post_title: "", post_content: "", youtube_url: "",
+  category_id: "", title: "", description: "", slug: "", icon: "💬", sort_order: 0,
+  post_title: "", post_content: "", youtube_url: "", stance_a: "찬성", stance_b: "반대",
 };
 
 function isValidYouTubeUrl(url: string): boolean {
@@ -1063,7 +1064,10 @@ function RoomsManagementTab() {
     if (!newRoomForm.title.trim() || !newRoomForm.slug.trim()) return;
     const autoOrder = (categories.find((c) => c.id === catId)?.rooms.length ?? 0);
     setSaving(true);
-    const r = await createRoom({ ...newRoomForm, category_id: catId, icon: "💬", sort_order: autoOrder });
+    const r = await createRoom({
+      ...newRoomForm, category_id: catId, icon: "💬", sort_order: autoOrder,
+      post_title: newRoomForm.post_content?.trim() ? newRoomForm.title : undefined,
+    });
     setSaving(false);
     if (r.success) { flash("ok", "방 추가됨"); setAddingRoomCatId(null); setNewRoomForm(EMPTY_ROOM); await reload(); }
     else flash("err", r.error ?? "실패");
@@ -1072,7 +1076,10 @@ function RoomsManagementTab() {
   async function handleUpdateRoom(id: string) {
     if (!editRoomForm.title.trim() || !editRoomForm.slug.trim()) return;
     setSaving(true);
-    const r = await updateRoom(id, editRoomForm);
+    const r = await updateRoom(id, {
+      ...editRoomForm,
+      post_title: editRoomForm.post_content?.trim() ? editRoomForm.title : undefined,
+    });
     setSaving(false);
     if (r.success) { flash("ok", "수정됨"); setEditingRoomId(null); await reload(); }
     else flash("err", r.error ?? "실패");
@@ -1238,13 +1245,15 @@ function RoomsManagementTab() {
                             <div className="flex items-center gap-2 flex-wrap">
                               <span className="font-black text-sm">{room.title}</span>
                               <span className="text-[10px] font-mono text-[#8c8070] bg-[#f0ece4] px-1.5 py-0.5">/{room.slug}</span>
-                              {room.post_title && (
-                                <span className="text-[9px] border border-[#4d9ab5] text-[#4d9ab5] px-1.5 py-0.5">게시글</span>
+                              {room.post_content && (
+                                <span className="text-[9px] border border-[#4d9ab5] text-[#4d9ab5] px-1.5 py-0.5">기사</span>
                               )}
                             </div>
-                            {room.description && (
-                              <p className="text-xs text-[#8c8070] mt-0.5 truncate max-w-xs">{room.description}</p>
-                            )}
+                            <div className="flex items-center gap-2 mt-0.5">
+                              <span className="text-[10px] text-[#4d9ab5]">▲ {room.stance_a ?? "찬성"}</span>
+                              <span className="text-[9px] text-[#a09080]">vs</span>
+                              <span className="text-[10px] text-[#c4788a]">▼ {room.stance_b ?? "반대"}</span>
+                            </div>
                           </div>
                         </div>
                         <div className="flex gap-1.5 shrink-0">
@@ -1266,6 +1275,8 @@ function RoomsManagementTab() {
                                 post_title: room.post_title ?? "",
                                 post_content: room.post_content ?? "",
                                 youtube_url: room.youtube_url ?? "",
+                                stance_a: room.stance_a ?? "찬성",
+                                stance_b: room.stance_b ?? "반대",
                               });
                               setAddingRoomCatId(null);
                             }}
@@ -1310,53 +1321,24 @@ function RoomForm({
   saving: boolean;
   saveLabel: string;
 }) {
-  const [showPost, setShowPost] = useState(!!(form.post_title || form.post_content || form.youtube_url));
-  const [slugEdited, setSlugEdited] = useState(!!form.slug);
-
+  const initialSlug = useRef(form.slug);
   const selectedCatName = categories.find((c) => c.id === form.category_id)?.name ?? "";
 
   return (
     <div className="space-y-3">
-      {/* 제목 + 슬러그 */}
-      <div className="grid grid-cols-2 gap-3">
-        <div>
-          <label className="text-[10px] font-black uppercase tracking-widest text-[#6b6356] block mb-1">제목 *</label>
-          <input
-            value={form.title}
-            onChange={(e) => {
-              const title = e.target.value;
-              onChange({ ...form, title, slug: slugEdited ? form.slug : generateSlug(title) });
-            }}
-            placeholder="주식"
-            maxLength={50}
-            className="w-full border-2 border-[#c8bfa8] bg-white px-3 py-2 text-sm font-bold"
-          />
-        </div>
-        <div>
-          <label className="text-[10px] font-black uppercase tracking-widest text-[#6b6356] block mb-1">슬러그 * (URL)</label>
-          <input
-            value={form.slug}
-            onChange={(e) => {
-              setSlugEdited(true);
-              onChange({ ...form, slug: e.target.value.replace(/[^a-z0-9-]/g, "") });
-            }}
-            placeholder="stocks"
-            maxLength={50}
-            className="w-full border-2 border-[#c8bfa8] bg-white px-3 py-2 text-sm font-mono"
-          />
-        </div>
-      </div>
-
-      {/* 설명 */}
+      {/* 제목 */}
       <div>
-        <label className="text-[10px] font-black uppercase tracking-widest text-[#6b6356] block mb-1">설명 (선택)</label>
-        <textarea
-          value={form.description ?? ""}
-          onChange={(e) => onChange({ ...form, description: e.target.value })}
-          placeholder="방 설명"
-          rows={2}
-          maxLength={500}
-          className="w-full border-2 border-[#c8bfa8] bg-white px-3 py-2 text-sm leading-relaxed resize-none"
+        <label className="text-[10px] font-black uppercase tracking-widest text-[#6b6356] block mb-1">제목 *</label>
+        <input
+          value={form.title}
+          onChange={(e) => {
+            const title = e.target.value;
+            const slug = initialSlug.current || generateSlug(title);
+            onChange({ ...form, title, slug });
+          }}
+          placeholder="주식 vs 부동산"
+          maxLength={80}
+          className="w-full border-2 border-[#c8bfa8] bg-white px-3 py-2 text-sm font-bold"
         />
       </div>
 
@@ -1378,6 +1360,30 @@ function RoomForm({
         )}
       </div>
 
+      {/* 진영 이름 */}
+      <div className="grid grid-cols-2 gap-3">
+        <div>
+          <label className="text-[10px] font-black uppercase tracking-widest text-[#6b6356] block mb-1">진영 A 이름</label>
+          <input
+            value={form.stance_a ?? "찬성"}
+            onChange={(e) => onChange({ ...form, stance_a: e.target.value })}
+            placeholder="찬성"
+            maxLength={20}
+            className="w-full border-2 border-[#4d9ab5]/50 bg-white px-3 py-2 text-sm text-[#1a5c75] font-bold"
+          />
+        </div>
+        <div>
+          <label className="text-[10px] font-black uppercase tracking-widest text-[#6b6356] block mb-1">진영 B 이름</label>
+          <input
+            value={form.stance_b ?? "반대"}
+            onChange={(e) => onChange({ ...form, stance_b: e.target.value })}
+            placeholder="반대"
+            maxLength={20}
+            className="w-full border-2 border-[#c4788a]/50 bg-white px-3 py-2 text-sm text-[#c4788a] font-bold"
+          />
+        </div>
+      </div>
+
       {/* 유튜브 URL */}
       <div>
         <label className="text-[10px] font-black uppercase tracking-widest text-[#6b6356] block mb-1">유튜브 URL (선택)</label>
@@ -1396,34 +1402,17 @@ function RoomForm({
         )}
       </div>
 
-      {/* 주제 게시글 */}
-      <div className="border-t border-[#e8e0d0] pt-3">
-        <button
-          type="button"
-          onClick={() => setShowPost((v) => !v)}
-          className="text-[10px] font-black uppercase tracking-widest text-[#6b6356] flex items-center gap-1 hover:text-[#1c1712] transition-colors"
-        >
-          {showPost ? "▲" : "▼"} 주제 게시글 {showPost ? "접기" : "설정 (선택)"}
-        </button>
-        {showPost && (
-          <div className="mt-3 space-y-2">
-            <input
-              value={form.post_title ?? ""}
-              onChange={(e) => onChange({ ...form, post_title: e.target.value })}
-              placeholder="게시글 제목"
-              maxLength={200}
-              className="w-full border-2 border-[#c8bfa8] bg-white px-3 py-2 text-sm font-bold"
-            />
-            <textarea
-              value={form.post_content ?? ""}
-              onChange={(e) => onChange({ ...form, post_content: e.target.value })}
-              placeholder="게시글 내용"
-              rows={6}
-              maxLength={2000}
-              className="w-full border-2 border-[#c8bfa8] bg-white px-3 py-2 text-sm leading-relaxed resize-none"
-            />
-          </div>
-        )}
+      {/* 기사 내용 */}
+      <div>
+        <label className="text-[10px] font-black uppercase tracking-widest text-[#6b6356] block mb-1">기사 내용 (선택)</label>
+        <textarea
+          value={form.post_content ?? ""}
+          onChange={(e) => onChange({ ...form, post_content: e.target.value })}
+          placeholder="기사 본문을 붙여넣으세요"
+          rows={6}
+          maxLength={5000}
+          className="w-full border-2 border-[#c8bfa8] bg-white px-3 py-2 text-sm leading-relaxed resize-none"
+        />
       </div>
 
       <div className="flex gap-2 pt-1">

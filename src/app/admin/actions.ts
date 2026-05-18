@@ -215,14 +215,15 @@ export interface RoomRow {
   id: string; category_id: string; title: string; description: string | null;
   slug: string; icon: string | null; post_title: string | null;
   post_content: string | null; post_updated_at: string | null;
-  youtube_url: string | null;
-  sort_order: number; created_at: string;
+  youtube_url: string | null; sort_order: number; created_at: string;
+  stance_a: string | null; stance_b: string | null;
 }
 
 export interface RoomInput {
   category_id: string; title: string; description?: string;
   slug: string; icon?: string; sort_order?: number;
   post_title?: string; post_content?: string; youtube_url?: string;
+  stance_a?: string; stance_b?: string;
 }
 
 export async function getCategoriesWithRooms(): Promise<(CategoryRow & { rooms: RoomRow[] })[]> {
@@ -275,6 +276,8 @@ export async function createRoom(data: RoomInput): Promise<{ success: boolean; e
     post_content: data.post_content?.trim() || null,
     post_updated_at: hasPost ? new Date().toISOString() : null,
     youtube_url: data.youtube_url?.trim() || null,
+    stance_a: data.stance_a?.trim() || "찬성",
+    stance_b: data.stance_b?.trim() || "반대",
   });
   if (error) return { success: false, error: error.message };
   revalidatePath("/rooms");
@@ -295,6 +298,8 @@ export async function updateRoom(id: string, data: RoomInput): Promise<{ success
     post_content: data.post_content?.trim() || null,
     post_updated_at: hasPost ? new Date().toISOString() : null,
     youtube_url: data.youtube_url?.trim() || null,
+    stance_a: data.stance_a?.trim() || "찬성",
+    stance_b: data.stance_b?.trim() || "반대",
   }).eq("id", id);
   if (error) return { success: false, error: error.message };
   revalidatePath("/rooms");

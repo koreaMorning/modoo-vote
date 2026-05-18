@@ -11,6 +11,8 @@ export interface Room {
   youtube_url: string | null;
   sort_order: number;
   created_at: string;
+  stance_a: string | null;
+  stance_b: string | null;
 }
 
 export interface RoomCategory {

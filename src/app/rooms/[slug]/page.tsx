@@ -22,7 +22,7 @@ export default async function RoomPage({ params }: Props) {
   return (
     <div className="min-h-screen flex flex-col text-[#1c1712]">
       <Header />
-      <main className="flex-1 max-w-3xl mx-auto w-full px-4 pt-2 pb-4">
+      <main className="flex-1 max-w-3xl mx-auto w-full px-4 pt-2">
         <RoomClient room={room} />
       </main>
     </div>
