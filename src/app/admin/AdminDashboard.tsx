@@ -1145,7 +1145,7 @@ function RoomsManagementTab() {
         {categories.map((cat) => {
           const accent = CAT_FILL[cat.name] ?? "#c8bfa8";
           return (
-            <div key={cat.id} className="border-2 border-[#1c1712] overflow-hidden">
+            <div key={cat.id} className="border-2 border-[#1c1712]">
               {/* 카테고리 헤더 */}
               <div className="flex items-stretch">
                 <div className="w-1.5 shrink-0" style={{ backgroundColor: accent }} />
@@ -1378,7 +1378,25 @@ function RoomForm({
         )}
       </div>
 
-      {/* 주제 게시글 + 유튜브 */}
+      {/* 유튜브 URL */}
+      <div>
+        <label className="text-[10px] font-black uppercase tracking-widest text-[#6b6356] block mb-1">유튜브 URL (선택)</label>
+        <input
+          value={form.youtube_url ?? ""}
+          onChange={(e) => onChange({ ...form, youtube_url: e.target.value })}
+          placeholder="https://www.youtube.com/watch?v=... 또는 https://youtu.be/..."
+          className={`w-full border-2 bg-white px-3 py-2 text-sm ${
+            form.youtube_url && !isValidYouTubeUrl(form.youtube_url)
+              ? "border-red-400"
+              : "border-[#c8bfa8]"
+          }`}
+        />
+        {form.youtube_url && !isValidYouTubeUrl(form.youtube_url) && (
+          <p className="text-[10px] text-red-600 mt-0.5">유효하지 않은 유튜브 URL입니다</p>
+        )}
+      </div>
+
+      {/* 주제 게시글 */}
       <div className="border-t border-[#e8e0d0] pt-3">
         <button
           type="button"
@@ -1404,22 +1422,6 @@ function RoomForm({
               maxLength={2000}
               className="w-full border-2 border-[#c8bfa8] bg-white px-3 py-2 text-sm leading-relaxed resize-none"
             />
-            <div>
-              <label className="text-[10px] font-black uppercase tracking-widest text-[#6b6356] block mb-1">유튜브 URL (선택)</label>
-              <input
-                value={form.youtube_url ?? ""}
-                onChange={(e) => onChange({ ...form, youtube_url: e.target.value })}
-                placeholder="https://www.youtube.com/watch?v=... 또는 https://youtu.be/..."
-                className={`w-full border-2 bg-white px-3 py-2 text-sm ${
-                  form.youtube_url && !isValidYouTubeUrl(form.youtube_url)
-                    ? "border-red-400"
-                    : "border-[#c8bfa8]"
-                }`}
-              />
-              {form.youtube_url && !isValidYouTubeUrl(form.youtube_url) && (
-                <p className="text-[10px] text-red-600 mt-0.5">유효하지 않은 유튜브 URL입니다</p>
-              )}
-            </div>
           </div>
         )}
       </div>
