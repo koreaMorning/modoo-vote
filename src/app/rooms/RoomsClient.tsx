@@ -78,7 +78,7 @@ export default function RoomsClient({ categories, stanceCounts }: Props) {
             </div>
 
             {/* ── 방 목록 ── */}
-            <div className="border-2 border-[#1c1712] divide-y-2 divide-[#e8e0d0]">
+            <div className="space-y-3">
               {cat.rooms.map((room) => {
                 const presence = presenceCounts[room.slug] ?? 0;
                 const counts = stanceCounts[room.slug] ?? { pro: 0, con: 0 };
@@ -89,31 +89,18 @@ export default function RoomsClient({ categories, stanceCounts }: Props) {
                   <Link
                     key={room.id}
                     href={`/rooms/${room.slug}`}
-                    className="block bg-[#fdf8f0] hover:bg-[#f5f0e8] transition-colors group"
+                    className="block bg-[#fdf8f0] border-2 border-[#1c1712] hover:shadow-[4px_4px_0_#1c1712] hover:-translate-x-0.5 hover:-translate-y-0.5 transition-all duration-150 group"
                   >
                     <div className="px-5 pt-4 pb-3">
 
                       {/* 방 제목 + 접속자 배지 */}
                       <div className="flex items-start justify-between gap-4 mb-3">
-                        <div className="flex items-start gap-3 min-w-0">
-                          <span className="text-2xl shrink-0 mt-0.5 leading-none">
-                            {room.icon ?? '💬'}
-                          </span>
-                          <div className="min-w-0">
-                            <h4 className="text-lg font-black font-serif leading-tight group-hover:underline underline-offset-2 text-[#1c1712]">
-                              {room.title}
-                            </h4>
-                            {room.description && (
-                              <p className="text-xs text-[#8c8070] leading-relaxed mt-0.5 line-clamp-1">
-                                {room.description}
-                              </p>
-                            )}
-                          </div>
-                        </div>
-
+                        <h4 className="text-lg font-black font-serif leading-tight group-hover:underline underline-offset-2 text-[#1c1712]">
+                          {room.title}
+                        </h4>
                         {presence > 0 && (
                           <span className="text-[10px] font-black bg-[#1c1712] text-[#f0e5c0] px-2 py-0.5 shrink-0 whitespace-nowrap">
-                            👥 {presence}명 접속 중
+                            👥 {presence}명
                           </span>
                         )}
                       </div>

@@ -182,23 +182,23 @@ export default function RoomClient({ room }: { room: Room }) {
         </div>
       )}
 
-      {/* 기사 내용 (접힘) */}
+      {/* 기사 내용 (3줄 미리보기 + 펼치기) */}
       {room.post_content && (
-        <div className="border-b border-[#d4cfc4]">
+        <div className="border-b border-[#d4cfc4] bg-[#faf7f0]">
+          <div className="px-4 pt-4 pb-3">
+            <p className={`text-sm text-[#2d2520] leading-[1.9] font-serif ${articleExpanded ? 'whitespace-pre-wrap' : 'line-clamp-3'}`}>
+              {room.post_content}
+            </p>
+          </div>
           <button
             onClick={() => setArticleExpanded((v) => !v)}
-            className="w-full flex items-center justify-between px-4 py-3 text-[11px] font-black tracking-widest uppercase text-[#6b6356] hover:bg-[#f5f0e8] transition-colors"
+            className="w-full flex items-center justify-center gap-1.5 py-2.5 text-[11px] font-black text-[#6b6356] hover:text-[#1c1712] hover:bg-[#f0ece4] border-t border-[#e8e0d0] transition-colors"
           >
-            기사 내용
-            {articleExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+            {articleExpanded
+              ? <><ChevronUp size={13} /> 접기</>
+              : <><ChevronDown size={13} /> 펼치기</>
+            }
           </button>
-          {articleExpanded && (
-            <div className="px-4 pb-5 bg-[#faf7f0] border-t border-[#e8e0d0]">
-              <p className="text-sm text-[#2d2520] leading-[1.9] whitespace-pre-wrap font-serif pt-4">
-                {room.post_content}
-              </p>
-            </div>
-          )}
         </div>
       )}
 

@@ -11,7 +11,7 @@ export default async function RoomsPage() {
 
   const [{ data: cats }, { data: rms }] = await Promise.all([
     supabase.from("room_categories").select("*").order("sort_order", { ascending: true }),
-    supabase.from("rooms").select("id, category_id, title, description, slug, icon, sort_order").order("sort_order", { ascending: true }),
+    supabase.from("rooms").select("id, category_id, title, description, slug, icon, sort_order, created_at").order("created_at", { ascending: false }),
   ]);
 
   const categories: RoomCategoryWithRooms[] = (cats ?? []).map((cat) => ({
