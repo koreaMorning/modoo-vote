@@ -17,18 +17,31 @@ function extractText(xml: string, tag: string): string {
   return plain ? plain[1].trim() : "";
 }
 
+const GOOGLE_NEWS_RE = /news\.google\.com\/rss\/articles\//;
+
+function resolveGoogleLink(link: string, description: string): string {
+  if (!GOOGLE_NEWS_RE.test(link)) return link;
+  const unescaped = description
+    .replace(/&lt;/g, "<").replace(/&gt;/g, ">")
+    .replace(/&amp;/g, "&").replace(/&quot;/g, '"');
+  const m = unescaped.match(/href="(https?:\/\/[^"]+)"/);
+  return m ? m[1] : link;
+}
+
 function parseRss(xml: string, outletName: string): RssItem[] {
   const itemRegex = /<item>([\s\S]*?)<\/item>/gi;
   const items: RssItem[] = [];
   let match;
   while ((match = itemRegex.exec(xml)) !== null) {
     const block = match[1];
-    const link = extractText(block, "link");
+    const description = extractText(block, "description");
+    const rawLink = extractText(block, "link");
+    const link = resolveGoogleLink(rawLink, description);
     const ytMatch = link.match(/(?:youtube\.com\/(?:watch\?v=|embed\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
     items.push({
       title: extractText(block, "title"),
       link,
-      description: extractText(block, "description"),
+      description,
       pubDate: extractText(block, "pubDate"),
       outlet: outletName,
       youtube_url: ytMatch ? `https://www.youtube.com/watch?v=${ytMatch[1]}` : null,

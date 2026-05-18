@@ -15,16 +15,29 @@ function extractText(xml: string, tag: string): string {
   return textMatch ? textMatch[1].trim() : "";
 }
 
+const GOOGLE_NEWS_RE = /news\.google\.com\/rss\/articles\//;
+
+function resolveGoogleLink(link: string, description: string): string {
+  if (!GOOGLE_NEWS_RE.test(link)) return link;
+  const unescaped = description
+    .replace(/&lt;/g, "<").replace(/&gt;/g, ">")
+    .replace(/&amp;/g, "&").replace(/&quot;/g, '"');
+  const m = unescaped.match(/href="(https?:\/\/[^"]+)"/);
+  return m ? m[1] : link;
+}
+
 function parseRss(xml: string): RssItem[] {
   const itemRegex = /<item>([\s\S]*?)<\/item>/gi;
   const items: RssItem[] = [];
   let match;
   while ((match = itemRegex.exec(xml)) !== null) {
     const block = match[1];
+    const description = extractText(block, "description");
+    const rawLink = extractText(block, "link");
     items.push({
       title: extractText(block, "title"),
-      link: extractText(block, "link"),
-      description: extractText(block, "description"),
+      link: resolveGoogleLink(rawLink, description),
+      description,
       pubDate: extractText(block, "pubDate"),
     });
   }
