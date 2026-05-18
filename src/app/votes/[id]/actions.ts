@@ -164,6 +164,6 @@ export async function reactToOpinion(
     return { success: false, newReaction: null, error: "server_error" };
   }
 
-  revalidatePath(`/votes/${pollId}`);
+  // revalidatePath 제거: 좋아요 시 서버 재렌더링이 로컬 상태를 초기화하는 버그 방지
   return { success: true, newReaction: (data as { reaction: string | null }).reaction as "like" | "dislike" | null };
 }

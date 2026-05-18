@@ -114,7 +114,10 @@ export default function VoteForm({
       <div>
         <div className="grid grid-cols-2 gap-3 mb-4">
           <button
-            onClick={() => setSelectedId(pro.id)}
+            onClick={() => {
+              setSelectedId(pro.id);
+              window.dispatchEvent(new CustomEvent('vote-stance', { detail: { stance: 'pro' } }));
+            }}
             className={`p-4 border-2 text-left transition-all ${
               selectedId === pro.id
                 ? "border-[#2a6828] bg-[#a8d8a0] ring-2 ring-[#2a6828]"
@@ -129,7 +132,10 @@ export default function VoteForm({
           </button>
 
           <button
-            onClick={() => setSelectedId(con.id)}
+            onClick={() => {
+              setSelectedId(con.id);
+              window.dispatchEvent(new CustomEvent('vote-stance', { detail: { stance: 'con' } }));
+            }}
             className={`p-4 border-2 text-left transition-all ${
               selectedId === con.id
                 ? "border-[#882020] bg-[#e8a898] ring-2 ring-[#882020]"

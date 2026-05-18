@@ -61,6 +61,7 @@ export default function OpinionClient({
   const [opinions, setOpinions] = useState(initialOpinions);
   const [myReactions, setMyReactions] = useState(initialMyReactions);
   const myTempIds = useRef(new Set<string>());
+  const pendingReactionIds = useRef(new Set<string>());
 
   // 닉네임
   const [nickname, setNickname] = useState("");
@@ -83,11 +84,23 @@ export default function OpinionClient({
   }
 
   useEffect(() => {
+    if (pendingReactionIds.current.size > 0) return;
     if (myTempIds.current.size > 0 && initialOpinions.length === 0) return;
     setOpinions(initialOpinions);
     setMyReactions(initialMyReactions);
     myTempIds.current.clear();
   }, [initialOpinions, initialMyReactions]);
+
+  // 투표 선택 시 스탠스 자동 설정
+  useEffect(() => {
+    if (!isProscon) return;
+    function handler(e: Event) {
+      const { stance } = (e as CustomEvent<{ stance: Stance }>).detail;
+      setStance(stance);
+    }
+    window.addEventListener('vote-stance', handler);
+    return () => window.removeEventListener('vote-stance', handler);
+  }, [isProscon]);
 
   // Form
   const [content, setContent] = useState("");
@@ -153,7 +166,9 @@ export default function OpinionClient({
       )
     );
 
+    pendingReactionIds.current.add(opinionId);
     reactToOpinion(opinionId, reaction, pollId).then((result) => {
+      pendingReactionIds.current.delete(opinionId);
       if (!result.success) {
         setMyReactions((prev) => {
           const next = { ...prev };

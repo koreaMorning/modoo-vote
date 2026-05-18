@@ -8,6 +8,7 @@ import VoteForm from "@/components/VoteForm";
 import OpinionSection from "@/components/OpinionSection";
 import { ArrowLeft, ArrowRight, Clock, Users, Newspaper, Eye } from "lucide-react";
 import ViewCounter from "./ViewCounter";
+import ArticleBodyToggle from "./ArticleBodyToggle";
 
 interface Props {
   params: Promise<{ id: string }>;
@@ -121,14 +122,6 @@ export default async function VotePage({ params }: Props) {
 
   const youtubeEmbedUrl = getYouTubeEmbedUrl(poll.youtube_url ?? null);
 
-  /* Split description into paragraphs for 2-column layout */
-  const paragraphs = (poll.description ?? "")
-    .split(/\n+/)
-    .map((s: string) => s.trim())
-    .filter(Boolean);
-  const leadPara = paragraphs[0] ?? null;
-  const bodyParas = paragraphs.slice(1);
-
   const catColor =
     categoryColors[poll.category] ?? "bg-[#d8ccb0] text-[#3d3326]";
 
@@ -203,25 +196,9 @@ export default async function VotePage({ params }: Props) {
             </div>
           )}
 
-          {/* ── 2-column article body ───────────────────────── */}
-          {leadPara && (
-            <div className="my-6 pb-6 border-b border-[#c8bfa0]">
-              {/* Lead paragraph */}
-              <p className="text-[15px] font-serif text-[#2d2520] leading-[1.85] mb-4">
-                {leadPara}
-              </p>
-
-              {/* Body paragraphs in 2 columns */}
-              {bodyParas.length > 0 && (
-                <div className="md:columns-2 md:gap-8 md:[column-rule:1px_solid_#c8bfa0] clear-both text-sm font-serif text-[#3d3326] leading-[1.8]">
-                  {bodyParas.map((p: string, i: number) => (
-                    <p key={i} className="mb-3 break-inside-avoid">
-                      {p}
-                    </p>
-                  ))}
-                </div>
-              )}
-            </div>
+          {/* ── Article body (collapsible) ──────────────────── */}
+          {poll.description && (
+            <ArticleBodyToggle description={poll.description} />
           )}
 
           {/* ── Vote section ────────────────────────────────── */}
