@@ -719,7 +719,7 @@ function PostsTab({ polls, onRefresh }: { polls: PollRow[]; onRefresh: () => Pro
 
   const now = new Date();
   const scheduledPolls = polls.filter(
-    (p) => p.publish_at && new Date(p.publish_at) > now && !p.is_breaking
+    (p) => p.publish_status === "scheduled" && p.publish_at && new Date(p.publish_at) > now && !p.is_breaking
   );
   const activePollList = polls.filter((p) => !scheduledPolls.includes(p));
 
