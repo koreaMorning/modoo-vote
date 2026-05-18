@@ -1061,8 +1061,9 @@ function RoomsManagementTab() {
 
   async function handleAddRoom(catId: string) {
     if (!newRoomForm.title.trim() || !newRoomForm.slug.trim()) return;
+    const autoOrder = (categories.find((c) => c.id === catId)?.rooms.length ?? 0);
     setSaving(true);
-    const r = await createRoom({ ...newRoomForm, category_id: catId });
+    const r = await createRoom({ ...newRoomForm, category_id: catId, icon: "💬", sort_order: autoOrder });
     setSaving(false);
     if (r.success) { flash("ok", "방 추가됨"); setAddingRoomCatId(null); setNewRoomForm(EMPTY_ROOM); await reload(); }
     else flash("err", r.error ?? "실패");
@@ -1201,6 +1202,7 @@ function RoomsManagementTab() {
                     form={{ ...newRoomForm, category_id: cat.id }}
                     onChange={setNewRoomForm}
                     categories={categories}
+                    lockCategory
                     onSave={() => handleAddRoom(cat.id)}
                     onCancel={() => { setAddingRoomCatId(null); setNewRoomForm(EMPTY_ROOM); }}
                     saving={saving}
@@ -1297,21 +1299,25 @@ function generateSlug(title: string): string {
 }
 
 function RoomForm({
-  form, onChange, categories, onSave, onCancel, saving, saveLabel,
+  form, onChange, categories, lockCategory, onSave, onCancel, saving, saveLabel,
 }: {
   form: RoomInput;
   onChange: (v: RoomInput) => void;
   categories: CatWithRooms[];
+  lockCategory?: boolean;
   onSave: () => void;
   onCancel: () => void;
   saving: boolean;
   saveLabel: string;
 }) {
-  const [showPost, setShowPost] = useState(!!(form.post_title || form.post_content));
+  const [showPost, setShowPost] = useState(!!(form.post_title || form.post_content || form.youtube_url));
   const [slugEdited, setSlugEdited] = useState(!!form.slug);
+
+  const selectedCatName = categories.find((c) => c.id === form.category_id)?.name ?? "";
 
   return (
     <div className="space-y-3">
+      {/* 제목 + 슬러그 */}
       <div className="grid grid-cols-2 gap-3">
         <div>
           <label className="text-[10px] font-black uppercase tracking-widest text-[#6b6356] block mb-1">제목 *</label>
@@ -1339,26 +1345,9 @@ function RoomForm({
             className="w-full border-2 border-[#c8bfa8] bg-white px-3 py-2 text-sm font-mono"
           />
         </div>
-        <div>
-          <label className="text-[10px] font-black uppercase tracking-widest text-[#6b6356] block mb-1">아이콘 (이모지)</label>
-          <input
-            value={form.icon ?? ""}
-            onChange={(e) => onChange({ ...form, icon: e.target.value })}
-            placeholder="📈"
-            maxLength={4}
-            className="w-full border-2 border-[#c8bfa8] bg-white px-3 py-2 text-sm text-center"
-          />
-        </div>
-        <div>
-          <label className="text-[10px] font-black uppercase tracking-widest text-[#6b6356] block mb-1">순서</label>
-          <input
-            type="number"
-            value={form.sort_order ?? 0}
-            onChange={(e) => onChange({ ...form, sort_order: Number(e.target.value) })}
-            className="w-full border-2 border-[#c8bfa8] bg-white px-3 py-2 text-sm text-center"
-          />
-        </div>
       </div>
+
+      {/* 설명 */}
       <div>
         <label className="text-[10px] font-black uppercase tracking-widest text-[#6b6356] block mb-1">설명 (선택)</label>
         <textarea
@@ -1370,18 +1359,26 @@ function RoomForm({
           className="w-full border-2 border-[#c8bfa8] bg-white px-3 py-2 text-sm leading-relaxed resize-none"
         />
       </div>
+
+      {/* 카테고리 */}
       <div>
         <label className="text-[10px] font-black uppercase tracking-widest text-[#6b6356] block mb-1">카테고리</label>
-        <select
-          value={form.category_id}
-          onChange={(e) => onChange({ ...form, category_id: e.target.value })}
-          className="w-full border-2 border-[#c8bfa8] bg-white px-3 py-2 text-sm"
-        >
-          {categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
-        </select>
+        {lockCategory ? (
+          <div className="border-2 border-[#c8bfa8] bg-[#f0ece4] px-3 py-2 text-sm font-bold text-[#4a4035]">
+            {selectedCatName}
+          </div>
+        ) : (
+          <select
+            value={form.category_id}
+            onChange={(e) => onChange({ ...form, category_id: e.target.value })}
+            className="w-full border-2 border-[#c8bfa8] bg-white px-3 py-2 text-sm"
+          >
+            {categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+          </select>
+        )}
       </div>
 
-      {/* 주제 게시글 */}
+      {/* 주제 게시글 + 유튜브 */}
       <div className="border-t border-[#e8e0d0] pt-3">
         <button
           type="button"
@@ -1412,7 +1409,7 @@ function RoomForm({
               <input
                 value={form.youtube_url ?? ""}
                 onChange={(e) => onChange({ ...form, youtube_url: e.target.value })}
-                placeholder="https://www.youtube.com/watch?v=..."
+                placeholder="https://www.youtube.com/watch?v=... 또는 https://youtu.be/..."
                 className={`w-full border-2 bg-white px-3 py-2 text-sm ${
                   form.youtube_url && !isValidYouTubeUrl(form.youtube_url)
                     ? "border-red-400"
