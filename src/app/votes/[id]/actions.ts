@@ -161,17 +161,72 @@ export async function reactToOpinion(
   const fingerprint = await getOrCreateFingerprint();
   const supabase = await createClient();
 
-  const { data, error } = await supabase.rpc("toggle_opinion_reaction", {
+  // RPC 시도 (toggle_opinion_reaction 함수가 있으면 원자적으로 처리)
+  const { data: rpcData, error: rpcError } = await supabase.rpc("toggle_opinion_reaction", {
     p_opinion_id: opinionId,
     p_fingerprint: fingerprint,
     p_reaction: reaction,
   });
 
-  if (error) {
-    console.error("React to opinion error:", error);
-    return { success: false, newReaction: null, error: "server_error" };
+  if (!rpcError) {
+    return {
+      success: true,
+      newReaction: (rpcData as { reaction: string | null }).reaction as "like" | "dislike" | null,
+    };
   }
 
-  // revalidatePath 제거: 좋아요 시 서버 재렌더링이 로컬 상태를 초기화하는 버그 방지
-  return { success: true, newReaction: (data as { reaction: string | null }).reaction as "like" | "dislike" | null };
+  // RPC 없을 경우 직접 테이블 연산으로 폴백
+  try {
+    const { data: existing } = await supabase
+      .from("opinion_reactions")
+      .select("id, reaction")
+      .eq("opinion_id", opinionId)
+      .eq("voter_fingerprint", fingerprint)
+      .maybeSingle();
+
+    const prevReaction = (existing?.reaction ?? null) as "like" | "dislike" | null;
+    let newReaction: "like" | "dislike" | null;
+    let likeDelta = 0;
+    let dislikeDelta = 0;
+
+    if (prevReaction === reaction) {
+      if (existing) await supabase.from("opinion_reactions").delete().eq("id", existing.id);
+      if (reaction === "like") likeDelta = -1; else dislikeDelta = -1;
+      newReaction = null;
+    } else if (prevReaction !== null) {
+      if (existing) await supabase.from("opinion_reactions").update({ reaction }).eq("id", existing.id);
+      if (reaction === "like") { likeDelta = 1; dislikeDelta = -1; } else { likeDelta = -1; dislikeDelta = 1; }
+      newReaction = reaction;
+    } else {
+      await supabase.from("opinion_reactions").insert({
+        opinion_id: opinionId,
+        voter_fingerprint: fingerprint,
+        reaction,
+      });
+      if (reaction === "like") likeDelta = 1; else dislikeDelta = 1;
+      newReaction = reaction;
+    }
+
+    // likes_count / dislikes_count 직접 업데이트
+    if (likeDelta !== 0 || dislikeDelta !== 0) {
+      const { data: op } = await supabase
+        .from("poll_opinions")
+        .select("likes_count, dislikes_count")
+        .eq("id", opinionId)
+        .single();
+
+      await supabase
+        .from("poll_opinions")
+        .update({
+          likes_count: Math.max(0, (op?.likes_count ?? 0) + likeDelta),
+          dislikes_count: Math.max(0, (op?.dislikes_count ?? 0) + dislikeDelta),
+        })
+        .eq("id", opinionId);
+    }
+
+    return { success: true, newReaction };
+  } catch (err) {
+    console.error("React to opinion fallback error:", err);
+    return { success: false, newReaction: null, error: "server_error" };
+  }
 }
