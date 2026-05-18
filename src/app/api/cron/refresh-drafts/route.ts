@@ -7,7 +7,7 @@ export const maxDuration = 60;
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
-const ALL_CATEGORIES = ["정치", "경제", "사회", "문화", "국제", "기술", "스포츠", "환경", "연예"];
+const ALL_CATEGORIES = ["정치", "경제", "사회", "국제", "문화", "스포츠", "연예"];
 const SCALE_OPTIONS = ["매우 긍정적", "긍정적", "보통", "부정적", "매우 부정적"];
 
 /* ── RSS helpers ── */
