@@ -51,13 +51,7 @@ export default async function RoomsPage() {
           </p>
         </div>
 
-        {categories.length === 0 ? (
-          <div className="text-center py-16 text-[#a09080] text-sm">
-            토론방을 준비 중입니다.
-          </div>
-        ) : (
-          <RoomsClient categories={categories} stanceCounts={stanceCounts} />
-        )}
+        <RoomsClient categories={categories} stanceCounts={stanceCounts} />
       </main>
     </div>
   );

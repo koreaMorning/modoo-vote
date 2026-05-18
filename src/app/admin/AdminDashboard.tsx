@@ -1004,24 +1004,17 @@ function isValidYouTubeUrl(url: string): boolean {
   return /(?:youtube\.com\/(?:watch\?v=|embed\/)|youtu\.be\/)[a-zA-Z0-9_-]{11}/.test(url);
 }
 
-function getYouTubeEmbedUrl(url: string): string | null {
-  const m = url.match(/(?:youtube\.com\/(?:watch\?v=|embed\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
-  return m ? `https://www.youtube.com/embed/${m[1]}` : null;
-}
-
 function RoomsManagementTab() {
   const [categories, setCategories] = useState<CatWithRooms[]>([]);
   const [dataLoading, setDataLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [globalMsg, setGlobalMsg] = useState<{ type: "ok" | "err"; text: string } | null>(null);
 
-  // 카테고리 편집 상태
   const [addingCat, setAddingCat] = useState(false);
   const [newCatForm, setNewCatForm] = useState({ name: "", sort_order: 1 });
   const [editingCatId, setEditingCatId] = useState<string | null>(null);
   const [editCatForm, setEditCatForm] = useState({ name: "", sort_order: 0 });
 
-  // 방 편집 상태
   const [addingRoomCatId, setAddingRoomCatId] = useState<string | null>(null);
   const [newRoomForm, setNewRoomForm] = useState<RoomInput>(EMPTY_ROOM);
   const [editingRoomId, setEditingRoomId] = useState<string | null>(null);
@@ -1039,7 +1032,6 @@ function RoomsManagementTab() {
 
   useEffect(() => { reload().finally(() => setDataLoading(false)); }, []);
 
-  // ── 카테고리 핸들러 ──
   async function handleAddCat() {
     if (!newCatForm.name.trim()) return;
     setSaving(true);
@@ -1067,7 +1059,6 @@ function RoomsManagementTab() {
     else flash("err", r.error ?? "실패");
   }
 
-  // ── 방 핸들러 ──
   async function handleAddRoom(catId: string) {
     if (!newRoomForm.title.trim() || !newRoomForm.slug.trim()) return;
     setSaving(true);
@@ -1116,7 +1107,6 @@ function RoomsManagementTab() {
         </div>
       )}
 
-      {/* 카테고리 추가 폼 */}
       {addingCat && (
         <div className="border-2 border-[#1c1712] p-4 mb-4 space-y-3">
           <p className="text-[10px] font-black uppercase tracking-widest text-[#6b6356]">새 카테고리</p>
@@ -1146,109 +1136,66 @@ function RoomsManagementTab() {
 
       {categories.length === 0 && !addingCat && (
         <div className="border-2 border-[#c8bfa8] py-16 text-center text-sm text-[#8c8070]">
-          카테고리가 없습니다. 먼저 카테고리를 추가해주세요.
+          카테고리가 없습니다. 마이그레이션 SQL을 실행하거나 카테고리를 추가해주세요.
         </div>
       )}
 
-      {/* 카테고리 목록 */}
-      <div className="space-y-6">
-        {categories.map((cat) => (
-          <div key={cat.id} className="border-2 border-[#1c1712]">
-            {/* 카테고리 헤더 */}
-            <div className="bg-[#1c1712] text-[#f0e5c0] px-4 py-2.5 flex items-center justify-between">
-              {editingCatId === cat.id ? (
-                <div className="flex items-center gap-2 flex-1">
-                  <input
-                    value={editCatForm.name}
-                    onChange={(e) => setEditCatForm({ ...editCatForm, name: e.target.value })}
-                    className="flex-1 bg-[#3d2b1f] border border-[#c8b890] px-2 py-1 text-sm font-bold text-[#f0e5c0]"
-                  />
-                  <input
-                    type="number"
-                    value={editCatForm.sort_order}
-                    onChange={(e) => setEditCatForm({ ...editCatForm, sort_order: Number(e.target.value) })}
-                    className="w-16 bg-[#3d2b1f] border border-[#c8b890] px-2 py-1 text-sm text-center text-[#f0e5c0]"
-                  />
-                  <button onClick={() => handleUpdateCat(cat.id)} disabled={saving} className="text-xs border border-[#c8b890] px-3 py-1 hover:bg-[#3d2b1f] disabled:opacity-50">저장</button>
-                  <button onClick={() => setEditingCatId(null)} className="text-xs border border-[#c8b890] px-3 py-1 hover:bg-[#3d2b1f]">취소</button>
-                </div>
-              ) : (
-                <>
-                  <div className="flex items-center gap-2">
-                    <span className="font-black text-sm">{cat.name}</span>
-                    <span className="text-[10px] text-[#c8b890]">순서 {cat.sort_order} · {cat.rooms.length}개 방</span>
-                  </div>
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => { setEditingCatId(cat.id); setEditCatForm({ name: cat.name, sort_order: cat.sort_order }); }}
-                      className="text-xs border border-[#c8b890] px-3 py-1 hover:bg-[#3d2b1f] transition-colors"
-                    >수정</button>
-                    <button
-                      onClick={() => handleDeleteCat(cat.id, cat.name)}
-                      className="text-xs border border-red-400 text-red-300 px-3 py-1 hover:bg-red-900/30 transition-colors"
-                    >삭제</button>
-                  </div>
-                </>
-              )}
-            </div>
-
-            {/* 방 목록 */}
-            <div className="divide-y divide-[#e8e0d0]">
-              {cat.rooms.map((room) => (
-                <div key={room.id} className="p-4">
-                  {editingRoomId === room.id ? (
-                    <RoomForm
-                      form={editRoomForm}
-                      onChange={setEditRoomForm}
-                      categories={categories}
-                      onSave={() => handleUpdateRoom(room.id)}
-                      onCancel={() => setEditingRoomId(null)}
-                      saving={saving}
-                      saveLabel="수정 저장"
-                    />
-                  ) : (
-                    <div className="flex items-start justify-between gap-4">
-                      <div className="flex items-start gap-3 min-w-0">
-                        <span className="text-xl shrink-0">{room.icon ?? "💬"}</span>
-                        <div className="min-w-0">
-                          <div className="flex items-center gap-2 flex-wrap">
-                            <span className="font-black text-sm">{room.title}</span>
-                            <span className="text-[10px] font-mono text-[#8c8070] bg-[#f0ece4] px-1.5 py-0.5">/{room.slug}</span>
-                            <span className="text-[10px] text-[#a09080]">순서 {room.sort_order}</span>
-                            {room.post_title && <span className="text-[9px] border border-[#4d9ab5] text-[#4d9ab5] px-1.5 py-0.5">게시글 있음</span>}
-                          </div>
-                          {room.description && <p className="text-xs text-[#8c8070] mt-0.5 truncate">{room.description}</p>}
-                        </div>
-                      </div>
-                      <div className="flex gap-2 shrink-0">
-                        <a href={`/rooms/${room.slug}`} target="_blank" className="text-xs border border-[#c8bfa8] px-3 py-1 hover:border-[#1c1712] transition-colors">보기</a>
-                        <button
-                          onClick={() => {
-                            setEditingRoomId(room.id);
-                            setEditRoomForm({
-                              category_id: room.category_id,
-                              title: room.title,
-                              description: room.description ?? "",
-                              slug: room.slug,
-                              icon: room.icon ?? "💬",
-                              sort_order: room.sort_order,
-                              post_title: room.post_title ?? "",
-                              post_content: room.post_content ?? "",
-                            });
-                            setAddingRoomCatId(null);
-                          }}
-                          className="text-xs border border-[#c8bfa8] px-3 py-1 hover:border-[#1c1712] transition-colors"
-                        >수정</button>
-                        <button onClick={() => handleDeleteRoom(room.id, room.title)} className="text-xs border border-red-400 text-red-600 px-3 py-1 hover:bg-red-50 transition-colors">삭제</button>
-                      </div>
+      <div className="space-y-4">
+        {categories.map((cat) => {
+          const accent = CAT_FILL[cat.name] ?? "#c8bfa8";
+          return (
+            <div key={cat.id} className="border-2 border-[#1c1712] overflow-hidden">
+              {/* 카테고리 헤더 */}
+              <div className="flex items-stretch">
+                <div className="w-1.5 shrink-0" style={{ backgroundColor: accent }} />
+                <div className="flex-1 bg-[#1c1712] text-[#f0e5c0] px-4 py-2.5 flex items-center justify-between">
+                  {editingCatId === cat.id ? (
+                    <div className="flex items-center gap-2 flex-1">
+                      <input
+                        value={editCatForm.name}
+                        onChange={(e) => setEditCatForm({ ...editCatForm, name: e.target.value })}
+                        className="flex-1 bg-[#3d2b1f] border border-[#c8b890] px-2 py-1 text-sm font-bold text-[#f0e5c0]"
+                      />
+                      <input
+                        type="number"
+                        value={editCatForm.sort_order}
+                        onChange={(e) => setEditCatForm({ ...editCatForm, sort_order: Number(e.target.value) })}
+                        className="w-16 bg-[#3d2b1f] border border-[#c8b890] px-2 py-1 text-sm text-center text-[#f0e5c0]"
+                      />
+                      <button onClick={() => handleUpdateCat(cat.id)} disabled={saving} className="text-xs border border-[#c8b890] px-3 py-1 hover:bg-[#3d2b1f] disabled:opacity-50">저장</button>
+                      <button onClick={() => setEditingCatId(null)} className="text-xs border border-[#c8b890] px-3 py-1 hover:bg-[#3d2b1f]">취소</button>
                     </div>
+                  ) : (
+                    <>
+                      <div className="flex items-center gap-2">
+                        <span className="font-black text-base font-serif">{cat.name}</span>
+                        <span className="text-[10px] text-[#c8b890]">{cat.rooms.length}개 방</span>
+                      </div>
+                      <div className="flex gap-1.5">
+                        <button
+                          onClick={() => { setAddingRoomCatId(cat.id); setNewRoomForm({ ...EMPTY_ROOM, category_id: cat.id }); setEditingRoomId(null); }}
+                          disabled={addingRoomCatId === cat.id}
+                          className="text-xs border border-[#c8b890] bg-[#c8b890] text-[#1c1712] px-3 py-1 font-bold hover:bg-[#f0e5c0] transition-colors disabled:opacity-50"
+                        >
+                          + 방 추가
+                        </button>
+                        <button
+                          onClick={() => { setEditingCatId(cat.id); setEditCatForm({ name: cat.name, sort_order: cat.sort_order }); }}
+                          className="text-xs border border-[#c8b890] px-3 py-1 hover:bg-[#3d2b1f] transition-colors"
+                        >수정</button>
+                        <button
+                          onClick={() => handleDeleteCat(cat.id, cat.name)}
+                          className="text-xs border border-red-400 text-red-300 px-3 py-1 hover:bg-red-900/30 transition-colors"
+                        >삭제</button>
+                      </div>
+                    </>
                   )}
                 </div>
-              ))}
+              </div>
 
-              {/* 방 추가 */}
-              {addingRoomCatId === cat.id ? (
-                <div className="p-4 bg-[#fdf8f0]">
+              {/* 방 추가 폼 */}
+              {addingRoomCatId === cat.id && (
+                <div className="p-4 bg-[#faf6ee] border-b-2 border-[#c8bfa8]">
                   <p className="text-[10px] font-black uppercase tracking-widest text-[#6b6356] mb-3">새 채팅방 추가</p>
                   <RoomForm
                     form={{ ...newRoomForm, category_id: cat.id }}
@@ -1260,19 +1207,81 @@ function RoomsManagementTab() {
                     saveLabel="추가"
                   />
                 </div>
-              ) : (
-                <div className="px-4 py-2">
-                  <button
-                    onClick={() => { setAddingRoomCatId(cat.id); setNewRoomForm({ ...EMPTY_ROOM, category_id: cat.id }); setEditingRoomId(null); }}
-                    className="text-xs text-[#8c8070] hover:text-[#1c1712] transition-colors font-bold"
-                  >
-                    + 방 추가
-                  </button>
-                </div>
               )}
+
+              {/* 방 목록 */}
+              <div className="divide-y divide-[#e8e0d0]">
+                {cat.rooms.length === 0 && addingRoomCatId !== cat.id && (
+                  <div className="px-4 py-6 text-center text-xs text-[#a09080]">
+                    방이 없습니다. + 방 추가를 눌러 추가하세요.
+                  </div>
+                )}
+                {cat.rooms.map((room) => (
+                  <div key={room.id} className="p-4 bg-[#fdf8f0]">
+                    {editingRoomId === room.id ? (
+                      <RoomForm
+                        form={editRoomForm}
+                        onChange={setEditRoomForm}
+                        categories={categories}
+                        onSave={() => handleUpdateRoom(room.id)}
+                        onCancel={() => setEditingRoomId(null)}
+                        saving={saving}
+                        saveLabel="저장"
+                      />
+                    ) : (
+                      <div className="flex items-center justify-between gap-4">
+                        <div className="flex items-center gap-3 min-w-0">
+                          <span className="text-xl shrink-0">{room.icon ?? "💬"}</span>
+                          <div className="min-w-0">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <span className="font-black text-sm">{room.title}</span>
+                              <span className="text-[10px] font-mono text-[#8c8070] bg-[#f0ece4] px-1.5 py-0.5">/{room.slug}</span>
+                              {room.post_title && (
+                                <span className="text-[9px] border border-[#4d9ab5] text-[#4d9ab5] px-1.5 py-0.5">게시글</span>
+                              )}
+                            </div>
+                            {room.description && (
+                              <p className="text-xs text-[#8c8070] mt-0.5 truncate max-w-xs">{room.description}</p>
+                            )}
+                          </div>
+                        </div>
+                        <div className="flex gap-1.5 shrink-0">
+                          <a
+                            href={`/rooms/${room.slug}`}
+                            target="_blank"
+                            className="text-xs border border-[#c8bfa8] px-3 py-1 hover:border-[#1c1712] transition-colors"
+                          >보기</a>
+                          <button
+                            onClick={() => {
+                              setEditingRoomId(room.id);
+                              setEditRoomForm({
+                                category_id: room.category_id,
+                                title: room.title,
+                                description: room.description ?? "",
+                                slug: room.slug,
+                                icon: room.icon ?? "💬",
+                                sort_order: room.sort_order,
+                                post_title: room.post_title ?? "",
+                                post_content: room.post_content ?? "",
+                                youtube_url: room.youtube_url ?? "",
+                              });
+                              setAddingRoomCatId(null);
+                            }}
+                            className="text-xs border border-[#c8bfa8] px-3 py-1 hover:border-[#1c1712] transition-colors"
+                          >수정</button>
+                          <button
+                            onClick={() => handleDeleteRoom(room.id, room.title)}
+                            className="text-xs border border-red-400 text-red-600 px-3 py-1 hover:bg-red-50 transition-colors"
+                          >삭제</button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );
@@ -1314,7 +1323,7 @@ function RoomForm({
             }}
             placeholder="주식"
             maxLength={50}
-            className="w-full border-2 border-[#c8bfa8] bg-[#f5f0e8] px-3 py-2 text-sm font-bold"
+            className="w-full border-2 border-[#c8bfa8] bg-white px-3 py-2 text-sm font-bold"
           />
         </div>
         <div>
@@ -1327,45 +1336,84 @@ function RoomForm({
             }}
             placeholder="stocks"
             maxLength={50}
-            className="w-full border-2 border-[#c8bfa8] bg-[#f5f0e8] px-3 py-2 text-sm font-mono"
+            className="w-full border-2 border-[#c8bfa8] bg-white px-3 py-2 text-sm font-mono"
           />
         </div>
         <div>
           <label className="text-[10px] font-black uppercase tracking-widest text-[#6b6356] block mb-1">아이콘 (이모지)</label>
-          <input value={form.icon ?? ""} onChange={(e) => onChange({ ...form, icon: e.target.value })} placeholder="📈" maxLength={4} className="w-full border-2 border-[#c8bfa8] bg-[#f5f0e8] px-3 py-2 text-sm text-center" />
+          <input
+            value={form.icon ?? ""}
+            onChange={(e) => onChange({ ...form, icon: e.target.value })}
+            placeholder="📈"
+            maxLength={4}
+            className="w-full border-2 border-[#c8bfa8] bg-white px-3 py-2 text-sm text-center"
+          />
         </div>
         <div>
           <label className="text-[10px] font-black uppercase tracking-widest text-[#6b6356] block mb-1">순서</label>
-          <input type="number" value={form.sort_order ?? 0} onChange={(e) => onChange({ ...form, sort_order: Number(e.target.value) })} className="w-full border-2 border-[#c8bfa8] bg-[#f5f0e8] px-3 py-2 text-sm text-center" />
+          <input
+            type="number"
+            value={form.sort_order ?? 0}
+            onChange={(e) => onChange({ ...form, sort_order: Number(e.target.value) })}
+            className="w-full border-2 border-[#c8bfa8] bg-white px-3 py-2 text-sm text-center"
+          />
         </div>
       </div>
       <div>
-        <label className="text-[10px] font-black uppercase tracking-widest text-[#6b6356] block mb-1">설명</label>
-        <textarea value={form.description ?? ""} onChange={(e) => onChange({ ...form, description: e.target.value })} placeholder="방 설명" rows={3} maxLength={500} className="w-full border-2 border-[#c8bfa8] bg-[#f5f0e8] px-3 py-2 text-sm leading-relaxed resize-none" />
+        <label className="text-[10px] font-black uppercase tracking-widest text-[#6b6356] block mb-1">설명 (선택)</label>
+        <textarea
+          value={form.description ?? ""}
+          onChange={(e) => onChange({ ...form, description: e.target.value })}
+          placeholder="방 설명"
+          rows={2}
+          maxLength={500}
+          className="w-full border-2 border-[#c8bfa8] bg-white px-3 py-2 text-sm leading-relaxed resize-none"
+        />
       </div>
       <div>
         <label className="text-[10px] font-black uppercase tracking-widest text-[#6b6356] block mb-1">카테고리</label>
-        <select value={form.category_id} onChange={(e) => onChange({ ...form, category_id: e.target.value })} className="w-full border-2 border-[#c8bfa8] bg-[#f5f0e8] px-3 py-2 text-sm">
+        <select
+          value={form.category_id}
+          onChange={(e) => onChange({ ...form, category_id: e.target.value })}
+          className="w-full border-2 border-[#c8bfa8] bg-white px-3 py-2 text-sm"
+        >
           {categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
         </select>
       </div>
 
-      {/* 주제 게시글 (접기/펼치기) */}
+      {/* 주제 게시글 */}
       <div className="border-t border-[#e8e0d0] pt-3">
-        <button type="button" onClick={() => setShowPost((v) => !v)} className="text-[10px] font-black uppercase tracking-widest text-[#6b6356] flex items-center gap-1">
+        <button
+          type="button"
+          onClick={() => setShowPost((v) => !v)}
+          className="text-[10px] font-black uppercase tracking-widest text-[#6b6356] flex items-center gap-1 hover:text-[#1c1712] transition-colors"
+        >
           {showPost ? "▲" : "▼"} 주제 게시글 {showPost ? "접기" : "설정 (선택)"}
         </button>
         {showPost && (
           <div className="mt-3 space-y-2">
-            <input value={form.post_title ?? ""} onChange={(e) => onChange({ ...form, post_title: e.target.value })} placeholder="게시글 제목" maxLength={200} className="w-full border-2 border-[#c8bfa8] bg-[#f5f0e8] px-3 py-2 text-sm font-bold" />
-            <textarea value={form.post_content ?? ""} onChange={(e) => onChange({ ...form, post_content: e.target.value })} placeholder="게시글 내용" rows={8} maxLength={2000} className="w-full border-2 border-[#c8bfa8] bg-[#f5f0e8] px-3 py-2 text-sm leading-relaxed resize-none" />
+            <input
+              value={form.post_title ?? ""}
+              onChange={(e) => onChange({ ...form, post_title: e.target.value })}
+              placeholder="게시글 제목"
+              maxLength={200}
+              className="w-full border-2 border-[#c8bfa8] bg-white px-3 py-2 text-sm font-bold"
+            />
+            <textarea
+              value={form.post_content ?? ""}
+              onChange={(e) => onChange({ ...form, post_content: e.target.value })}
+              placeholder="게시글 내용"
+              rows={6}
+              maxLength={2000}
+              className="w-full border-2 border-[#c8bfa8] bg-white px-3 py-2 text-sm leading-relaxed resize-none"
+            />
             <div>
               <label className="text-[10px] font-black uppercase tracking-widest text-[#6b6356] block mb-1">유튜브 URL (선택)</label>
               <input
                 value={form.youtube_url ?? ""}
                 onChange={(e) => onChange({ ...form, youtube_url: e.target.value })}
-                placeholder="https://www.youtube.com/watch?v=... 또는 https://youtu.be/..."
-                className={`w-full border-2 bg-[#f5f0e8] px-3 py-2 text-sm ${
+                placeholder="https://www.youtube.com/watch?v=..."
+                className={`w-full border-2 bg-white px-3 py-2 text-sm ${
                   form.youtube_url && !isValidYouTubeUrl(form.youtube_url)
                     ? "border-red-400"
                     : "border-[#c8bfa8]"
@@ -1380,10 +1428,17 @@ function RoomForm({
       </div>
 
       <div className="flex gap-2 pt-1">
-        <button onClick={onSave} disabled={saving || !form.title.trim() || !form.slug.trim()} className="border-2 border-[#1c1712] bg-[#1c1712] text-[#f0e5c0] px-5 py-2 text-sm font-bold hover:bg-[#3d2b1f] disabled:opacity-50 transition-colors">
+        <button
+          onClick={onSave}
+          disabled={saving || !form.title.trim() || !form.slug.trim()}
+          className="border-2 border-[#1c1712] bg-[#1c1712] text-[#f0e5c0] px-5 py-2 text-sm font-bold hover:bg-[#3d2b1f] disabled:opacity-50 transition-colors"
+        >
           {saving ? "저장 중..." : saveLabel}
         </button>
-        <button onClick={onCancel} className="border-2 border-[#c8bfa8] px-4 py-2 text-sm hover:border-[#1c1712] transition-colors">취소</button>
+        <button
+          onClick={onCancel}
+          className="border-2 border-[#c8bfa8] px-4 py-2 text-sm hover:border-[#1c1712] transition-colors"
+        >취소</button>
       </div>
     </div>
   );
