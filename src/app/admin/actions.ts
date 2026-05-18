@@ -2,7 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { cookies } from "next/headers";
-import { revalidatePath } from "next/cache";
+import { revalidatePath, unstable_noStore as noStore } from "next/cache";
 import { redirect } from "next/navigation";
 import { getNextPublishTime, formatPublishLabel } from "@/lib/publishing";
 
@@ -147,6 +147,7 @@ export async function publishPollNow(id: string): Promise<{ success: boolean; er
     .eq("id", id);
   if (error) return { success: false, error: error.message };
   revalidatePath("/");
+  revalidatePath("/admin");
   return { success: true };
 }
 
@@ -316,6 +317,7 @@ export async function deleteRoom(id: string): Promise<{ success: boolean; error?
 }
 
 export async function getPolls() {
+  noStore();
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("polls")
