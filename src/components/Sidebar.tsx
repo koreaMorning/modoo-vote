@@ -128,7 +128,7 @@ export default async function Sidebar({ pollId }: Props) {
           {["정치", "경제", "사회", "문화", "스포츠", "기술"].map((cat) => (
             <Link
               key={cat}
-              href={`/?category=${encodeURIComponent(cat)}`}
+              href={`/category/${encodeURIComponent(cat)}`}
               className="text-xs py-1 px-2 border border-[#c8bfa0] hover:bg-[#1c1712] hover:text-[#f0e5c0] hover:border-[#1c1712] transition-colors text-center"
             >
               {cat}
