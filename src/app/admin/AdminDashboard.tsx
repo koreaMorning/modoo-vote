@@ -79,6 +79,18 @@ export default function AdminDashboard({ initialPolls }: Props) {
     setPolls(fresh as PollRow[]);
   }, []);
 
+  const handlePublishNow = useCallback(async (id: string): Promise<{ success: boolean; error?: string }> => {
+    const result = await publishPollNow(id);
+    if (result.success) {
+      setPolls(prev => prev.map(p =>
+        p.id === id
+          ? { ...p, publish_status: "published", publish_at: new Date().toISOString() }
+          : p
+      ));
+    }
+    return result;
+  }, []);
+
   const runAutoRefresh = useCallback(async () => {
     setAutoStatus("running");
     setAutoCreated(null);
@@ -169,7 +181,7 @@ export default function AdminDashboard({ initialPolls }: Props) {
       <div className="max-w-6xl mx-auto px-6 py-8">
         {tab === "news" && <NewsTab />}
         {tab === "drafts" && <DraftsTab onPollCreated={refreshPolls} />}
-        {tab === "posts" && <PostsTab polls={polls} onRefresh={refreshPolls} />}
+        {tab === "posts" && <PostsTab polls={polls} onRefresh={refreshPolls} onPublishNow={handlePublishNow} />}
         {tab === "write" && <WriteTab onCreated={refreshPolls} />}
         {tab === "rooms" && <RoomsManagementTab />}
       </div>
@@ -612,7 +624,7 @@ function CategoryStats({
 }
 
 /* ─────────────────── 게시글 관리 탭 ─────────────────── */
-function PostsTab({ polls, onRefresh }: { polls: PollRow[]; onRefresh: () => Promise<void> }) {
+function PostsTab({ polls, onRefresh, onPublishNow }: { polls: PollRow[]; onRefresh: () => Promise<void>; onPublishNow: (id: string) => Promise<{ success: boolean; error?: string }> }) {
   const [editId, setEditId] = useState<string | null>(null);
   const [editData, setEditData] = useState<{ title: string; category: Category; ends_at: string }>({
     title: "",
@@ -692,10 +704,9 @@ function PostsTab({ polls, onRefresh }: { polls: PollRow[]; onRefresh: () => Pro
 
   async function handlePublishNow(id: string) {
     setSaving(id);
-    const result = await publishPollNow(id);
+    const result = await onPublishNow(id);
     setSaving(null);
     if (result.success) {
-      await onRefresh();
       setMsg({ type: "ok", text: "즉시 발행되었습니다" });
     } else {
       setMsg({ type: "err", text: result.error ?? "실패" });
