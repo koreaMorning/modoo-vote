@@ -230,7 +230,7 @@ export async function getCategoriesWithRooms(): Promise<(CategoryRow & { rooms: 
   const supabase = await createClient();
   const [{ data: cats }, { data: rms }] = await Promise.all([
     supabase.from("room_categories").select("*").order("sort_order", { ascending: true }),
-    supabase.from("rooms").select("*").order("sort_order", { ascending: true }),
+    supabase.from("rooms").select("*").order("created_at", { ascending: false }),
   ]);
   return (cats ?? []).map((cat) => ({
     ...cat,
