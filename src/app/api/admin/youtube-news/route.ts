@@ -9,57 +9,81 @@ const CHANNELS = [
   { id: "UChlgI3UHCOnwUGzWzbJ3H5w", name: "YTN" },
 ];
 
-interface YTSnippet {
-  title: string;
-  description: string;
-  publishedAt: string;
-  thumbnails: { medium?: { url: string }; default?: { url: string } };
-  channelId: string;
-}
-
-interface YTItem {
+interface SearchItem {
   id: { videoId: string };
-  snippet: YTSnippet;
+  snippet: {
+    title: string;
+    description: string;
+    publishedAt: string;
+    thumbnails: { medium?: { url: string }; default?: { url: string } };
+  };
 }
 
-interface YTResponse {
-  items?: YTItem[];
-  error?: { message: string };
+interface VideoItem {
+  id: string;
+  statistics: { viewCount?: string };
+}
+
+interface YTError { error: { message: string } }
+
+async function ytFetch<T>(url: URL, apiKey: string): Promise<T> {
+  url.searchParams.set("key", apiKey);
+  const res = await fetch(url.toString(), { cache: "no-store" });
+  const data = await res.json() as T | YTError;
+  if ("error" in data) throw new Error((data as YTError).error.message);
+  return data as T;
 }
 
 async function fetchChannelVideos(
   channelId: string,
   channelName: string,
   apiKey: string,
-  publishedAfter: string
+  publishedAfter: string,
 ) {
-  const url = new URL("https://www.googleapis.com/youtube/v3/search");
-  url.searchParams.set("part", "snippet");
-  url.searchParams.set("channelId", channelId);
-  url.searchParams.set("maxResults", "5");
-  url.searchParams.set("order", "date");
-  url.searchParams.set("type", "video");
-  url.searchParams.set("publishedAfter", publishedAfter);
-  url.searchParams.set("key", apiKey);
+  // 1. Search: up to 20 latest videos
+  const searchUrl = new URL("https://www.googleapis.com/youtube/v3/search");
+  searchUrl.searchParams.set("part", "snippet");
+  searchUrl.searchParams.set("channelId", channelId);
+  searchUrl.searchParams.set("maxResults", "20");
+  searchUrl.searchParams.set("order", "date");
+  searchUrl.searchParams.set("type", "video");
+  searchUrl.searchParams.set("publishedAfter", publishedAfter);
 
-  const res = await fetch(url.toString(), { cache: "no-store" });
-  const data: YTResponse = await res.json();
+  const searchData = await ytFetch<{ items?: SearchItem[] }>(searchUrl, apiKey);
+  const searchItems = searchData.items ?? [];
+  if (searchItems.length === 0) return [];
 
-  if (data.error) throw new Error(`[${channelName}] ${data.error.message}`);
+  // 2. Videos: fetch statistics for sorting by viewCount
+  const videoIds = searchItems.map((i) => i.id.videoId).join(",");
+  const statsUrl = new URL("https://www.googleapis.com/youtube/v3/videos");
+  statsUrl.searchParams.set("part", "statistics");
+  statsUrl.searchParams.set("id", videoIds);
 
-  return (data.items ?? []).map((item) => ({
-    video_id: item.id.videoId,
-    channel_id: channelId,
-    channel_name: channelName,
-    title: item.snippet.title,
-    description: item.snippet.description?.slice(0, 500) ?? null,
-    published_at: item.snippet.publishedAt,
-    thumbnail_url:
-      item.snippet.thumbnails.medium?.url ??
-      item.snippet.thumbnails.default?.url ??
-      null,
-  }));
+  const statsData = await ytFetch<{ items?: VideoItem[] }>(statsUrl, apiKey);
+  const statsMap = new Map(
+    (statsData.items ?? []).map((v) => [v.id, Number(v.statistics.viewCount ?? 0)])
+  );
+
+  // 3. Merge, sort by viewCount desc, take top 5
+  return searchItems
+    .map((item) => ({
+      video_id: item.id.videoId,
+      channel_id: channelId,
+      channel_name: channelName,
+      title: item.snippet.title,
+      description: item.snippet.description?.slice(0, 500) ?? null,
+      published_at: item.snippet.publishedAt,
+      thumbnail_url:
+        item.snippet.thumbnails.medium?.url ??
+        item.snippet.thumbnails.default?.url ??
+        null,
+      view_count: statsMap.get(item.id.videoId) ?? 0,
+    }))
+    .sort((a, b) => b.view_count - a.view_count)
+    .slice(0, 5);
 }
+
+type VideoRow = Awaited<ReturnType<typeof fetchChannelVideos>>[number];
 
 export async function GET() {
   const apiKey = process.env.YOUTUBE_API_KEY;
@@ -67,13 +91,13 @@ export async function GET() {
     return NextResponse.json({ error: "YOUTUBE_API_KEY가 설정되지 않았습니다" }, { status: 503 });
   }
 
-  const publishedAfter = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+  const publishedAfter = new Date(Date.now() - 48 * 60 * 60 * 1000).toISOString();
 
   const results = await Promise.allSettled(
     CHANNELS.map((ch) => fetchChannelVideos(ch.id, ch.name, apiKey, publishedAfter))
   );
 
-  const videos: ReturnType<typeof fetchChannelVideos> extends Promise<infer T> ? T : never = [];
+  const videos: VideoRow[] = [];
   const errors: string[] = [];
 
   for (const [i, result] of results.entries()) {
