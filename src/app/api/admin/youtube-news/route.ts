@@ -64,8 +64,11 @@ async function fetchChannelVideos(
     (statsData.items ?? []).map((v) => [v.id, Number(v.statistics.viewCount ?? 0)])
   );
 
-  // 3. Merge, sort by viewCount desc, take top 5
+  const LIVE_KEYWORDS = ["라이브", "LIVE", "Live", "live", "중계", "생방송", "실시간"];
+
+  // 3. Merge, filter live/realtime, sort by viewCount desc, take top 5
   return searchItems
+    .filter((item) => !LIVE_KEYWORDS.some((kw) => item.snippet.title.includes(kw)))
     .map((item) => ({
       video_id: item.id.videoId,
       channel_id: channelId,
