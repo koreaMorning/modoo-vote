@@ -24,7 +24,8 @@ export const RSS_FEEDS: Record<string, RssFeed[]> = {
     { name: "한겨레",   url: "https://www.hani.co.kr/rss/" },
     { name: "경향신문", url: "https://www.khan.co.kr/rss/rssdata/total_news.xml" },
     { name: "매일경제", url: "https://www.mk.co.kr/rss/30000001/" },
-    { name: "MBC",     url: G("경제 site:imbc.com") },
+    { name: "MBC",     url: "https://imnews.imbc.com/rss/news/news_04.xml" },
+    { name: "SBS",     url: "https://news.sbs.co.kr/news/SectionRssFeed.do?sectionId=02&plink=RSSREADER" },
     { name: "YTN",     url: G("경제 site:ytn.co.kr") },
   ],
   사회: [
@@ -42,6 +43,8 @@ export const RSS_FEEDS: Record<string, RssFeed[]> = {
     { name: "한겨레",   url: "https://www.hani.co.kr/rss/" },
     { name: "경향신문", url: "https://www.khan.co.kr/rss/rssdata/total_news.xml" },
     { name: "KBS",     url: "https://news.kbs.co.kr/rss/rss.do" },
+    { name: "MBC",     url: "https://imnews.imbc.com/rss/news/news_03.xml" },
+    { name: "SBS",     url: "https://news.sbs.co.kr/news/SectionRssFeed.do?sectionId=07&plink=RSSREADER" },
     { name: "YTN",     url: G("국제 site:ytn.co.kr") },
   ],
   문화: [
@@ -49,7 +52,8 @@ export const RSS_FEEDS: Record<string, RssFeed[]> = {
     { name: "조선일보",  url: "https://www.chosun.com/arc/outboundfeeds/rss/category/culture-life/?outputType=xml" },
     { name: "한겨레",   url: "https://www.hani.co.kr/rss/" },
     { name: "경향신문", url: "https://www.khan.co.kr/rss/rssdata/total_news.xml" },
-    { name: "MBC",     url: G("문화 site:imbc.com") },
+    { name: "MBC",     url: "https://imnews.imbc.com/rss/news/news_06.xml" },
+    { name: "SBS",     url: "https://news.sbs.co.kr/news/SectionRssFeed.do?sectionId=08&plink=RSSREADER" },
   ],
   스포츠: [
     { name: "연합뉴스",  url: "https://www.yna.co.kr/rss/sports.xml" },
@@ -62,6 +66,8 @@ export const RSS_FEEDS: Record<string, RssFeed[]> = {
     { name: "연합뉴스",  url: "https://www.yna.co.kr/rss/entertainment.xml" },
     { name: "조선일보",  url: "https://www.chosun.com/arc/outboundfeeds/rss/category/entertainments/?outputType=xml" },
     { name: "경향신문", url: "https://www.khan.co.kr/rss/rssdata/total_news.xml" },
+    { name: "MBC",     url: "https://imnews.imbc.com/rss/news/news_06.xml" },
+    { name: "SBS",     url: "https://news.sbs.co.kr/news/SectionRssFeed.do?sectionId=14&plink=RSSREADER" },
     { name: "구글뉴스", url: G("연예 아이돌 드라마") },
   ],
 };
