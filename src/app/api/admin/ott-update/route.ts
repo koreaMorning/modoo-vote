@@ -141,8 +141,8 @@ ${sections}
     if (!jsonMatch) throw new Error("JSON 파싱 실패");
 
     const parsed = JSON.parse(jsonMatch[0]) as {
-      ranks: Array<{ platform: string; rank: number; title: string; genre?: string; desc?: string; badges?: string[]; ep?: string }>;
-      upcoming: Array<{ platform: string; title: string; date?: string; desc?: string }>;
+      ranks: Array<{ platform: string; rank: number; title: string; genre?: string; description?: string; badges?: string[]; ep?: string }>;
+      upcoming: Array<{ platform: string; title: string; date?: string; description?: string }>;
     };
 
     const rankRows: RankRow[] = parsed.ranks.map((r) => ({
