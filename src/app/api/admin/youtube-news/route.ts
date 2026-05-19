@@ -26,7 +26,7 @@ interface VideoItem {
 
 interface YTError { error: { message: string } }
 
-async function ytFetch<T>(url: URL, apiKey: string): Promise<T> {
+async function ytFetch<T extends object>(url: URL, apiKey: string): Promise<T> {
   url.searchParams.set("key", apiKey);
   const res = await fetch(url.toString(), { cache: "no-store" });
   const data = await res.json() as T | YTError;
