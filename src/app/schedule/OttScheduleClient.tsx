@@ -82,13 +82,25 @@ function buildUpcoming(data: DbRow[]): UpcomingRow[] {
   }));
 }
 
+const DAYS = ['일', '월', '화', '수', '목', '금', '토'];
+
+function toKoreanDate(d: Date) {
+  return `${d.getFullYear()}년 ${d.getMonth() + 1}월 ${d.getDate()}일 ${DAYS[d.getDay()]}요일`;
+}
+
 export default function OttScheduleClient() {
   const [active, setActive]       = useState<PlatformId>('netflix');
   const [ranks, setRanks]         = useState<RankRow[]>([]);
   const [upcoming, setUpcoming]   = useState<UpcomingRow[]>([]);
   const [loading, setLoading]     = useState(true);
+  const [dateStr, setDateStr]     = useState('');
+
+  const notice = active === 'netflix'
+    ? '※ 넷플릭스 순위는 매주 화요일 갱신됩니다'
+    : '※ 순위는 매일 오전 9시 갱신됩니다';
 
   useEffect(() => {
+    setDateStr(toKoreanDate(new Date()));
     const supabase = createClient();
     supabase
       .from('ott_schedule')
@@ -107,6 +119,14 @@ export default function OttScheduleClient() {
 
   return (
     <div>
+      {/* 날짜 / 갱신 공지 */}
+      {dateStr && (
+        <div className={s.headerRight}>
+          <div className={s.headerDate}>{dateStr}</div>
+          <div className={s.headerNotice}>{notice}</div>
+        </div>
+      )}
+
       {/* 플랫폼 탭 */}
       <div className={s.tabsWrap}>
         {platforms.map((p) => (

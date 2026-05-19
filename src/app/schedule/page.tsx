@@ -19,10 +19,6 @@ export default function SchedulePage() {
                   <div className={s.headerSubTitle}>STREAMING SERVICE WEEKLY RANKINGS</div>
                 </div>
               </div>
-              <div className={s.headerRight}>
-                <div className={s.headerDate}>2026년 5월 6일 화요일</div>
-                <div className={s.headerNotice}>※ 순위는 매일 오전 9시 업데이트됩니다</div>
-              </div>
             </div>
           </div>
 
