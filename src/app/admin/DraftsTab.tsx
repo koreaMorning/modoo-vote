@@ -14,7 +14,6 @@ import {
 import { Category } from "@/types";
 
 const CATEGORIES: Category[] = ["정치", "경제", "사회", "국제", "문화", "스포츠", "연예"];
-const RSS_CATEGORIES = ["정치", "경제", "사회", "국제", "문화", "스포츠", "연예"];
 
 type StatusFilter = "pending" | "approved" | "rejected" | "all";
 
@@ -58,13 +57,23 @@ export default function DraftsTab({ onPollCreated }: { onPollCreated: () => Prom
     loadDrafts();
   }, [loadDrafts]);
 
+  const pendingByCategory = Object.fromEntries(
+    CATEGORIES.map((cat) => [
+      cat,
+      drafts.filter((d) => d.category === cat && d.status === "pending").length,
+    ])
+  );
+
+  const categoryDrafts = drafts.filter((d) => d.category === genCategory);
   const filtered =
-    statusFilter === "all" ? drafts : drafts.filter((d) => d.status === statusFilter);
+    statusFilter === "all"
+      ? categoryDrafts
+      : categoryDrafts.filter((d) => d.status === statusFilter);
 
   const counts = {
-    pending: drafts.filter((d) => d.status === "pending").length,
-    approved: drafts.filter((d) => d.status === "approved").length,
-    rejected: drafts.filter((d) => d.status === "rejected").length,
+    pending:  categoryDrafts.filter((d) => d.status === "pending").length,
+    approved: categoryDrafts.filter((d) => d.status === "approved").length,
+    rejected: categoryDrafts.filter((d) => d.status === "rejected").length,
   };
 
   async function handleFetch() {
@@ -203,6 +212,28 @@ export default function DraftsTab({ onPollCreated }: { onPollCreated: () => Prom
 
   return (
     <div>
+      {/* Category tabs */}
+      <div className="flex gap-0 border-b-2 border-[#1c1712] mb-6 overflow-x-auto">
+        {CATEGORIES.map((cat) => (
+          <button
+            key={cat}
+            onClick={() => { setGenCategory(cat); setBatchItems([]); setBatchStats(null); setGenMsg(null); }}
+            className={`flex items-center gap-1.5 px-4 py-2 text-sm font-bold border-b-2 -mb-0.5 shrink-0 transition-colors ${
+              genCategory === cat
+                ? "border-[#1c1712] text-[#1c1712] bg-[#f5f0e8]"
+                : "border-transparent text-[#6b6356] hover:text-[#1c1712]"
+            }`}
+          >
+            {cat}
+            {pendingByCategory[cat] > 0 && (
+              <span className="text-[10px] font-black bg-amber-400 text-amber-900 px-1.5 py-0.5 rounded-full leading-none">
+                {pendingByCategory[cat]}
+              </span>
+            )}
+          </button>
+        ))}
+      </div>
+
       {/* AI Generation Panel */}
       <div className="border-2 border-[#1c1712] mb-6">
         <div className="border-b-2 border-[#1c1712] bg-[#1c1712] text-[#f0e5c0] px-4 py-2 flex items-center justify-between">
@@ -217,15 +248,6 @@ export default function DraftsTab({ onPollCreated }: { onPollCreated: () => Prom
         </div>
         <div className="p-4 space-y-3">
           <div className="flex gap-2 flex-wrap">
-            <select
-              value={genCategory}
-              onChange={(e) => setGenCategory(e.target.value)}
-              className="border-2 border-[#c8bfa8] bg-[#f5f0e8] px-3 py-2 text-sm flex-1 min-w-[120px]"
-            >
-              {RSS_CATEGORIES.map((c) => (
-                <option key={c}>{c}</option>
-              ))}
-            </select>
             <button
               onClick={handleFetch}
               disabled={fetching || generating || globalRunning}
