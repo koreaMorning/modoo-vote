@@ -617,3 +617,18 @@ export async function removeThemeRoom(
   revalidatePath(`/themes/${themeId}`);
   return { success: true };
 }
+
+
+export async function deleteYoutubeVideo(id: string): Promise<{ success: boolean; error?: string }> {
+  const supabase = createAdminClient();
+  const { error } = await supabase.from("youtube_news").delete().eq("id", id);
+  if (error) return { success: false, error: error.message };
+  return { success: true };
+}
+
+export async function deleteAllYoutubeVideos(): Promise<{ success: boolean; error?: string }> {
+  const supabase = createAdminClient();
+  const { error } = await supabase.from("youtube_news").delete().not("id", "is", null);
+  if (error) return { success: false, error: error.message };
+  return { success: true };
+}

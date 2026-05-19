@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { createPoll } from "./actions";
+import { createPoll, deleteYoutubeVideo, deleteAllYoutubeVideos } from "./actions";
 import { Category } from "@/types";
 
 const CATEGORIES: Category[] = ["정치", "경제", "사회", "국제", "문화", "스포츠", "연예"];
@@ -36,6 +36,8 @@ export default function VideoNewsTab() {
   const [converting, setConverting] = useState(false);
   const [saveCategory, setSaveCategory] = useState<Category>("정치");
   const [saving, setSaving] = useState(false);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [deletingAll, setDeletingAll] = useState(false);
   const [msg, setMsg] = useState<{ type: "ok" | "err"; text: string } | null>(null);
 
   async function loadVideos() {
@@ -91,6 +93,35 @@ export default function VideoNewsTab() {
     }
   }
 
+  async function handleDeleteOne(id: string) {
+    setDeletingId(id);
+    setMsg(null);
+    const result = await deleteYoutubeVideo(id);
+    setDeletingId(null);
+    if (result.success) {
+      await loadVideos();
+      if (selected?.id === id) { setSelected(null); setConverted(null); }
+    } else {
+      setMsg({ type: "err", text: "삭제 실패: " + (result.error ?? "") });
+    }
+  }
+
+  async function handleDeleteAll() {
+    if (!confirm("youtube_news 테이블의 모든 영상을 삭제하시겠습니까?")) return;
+    setDeletingAll(true);
+    setMsg(null);
+    const result = await deleteAllYoutubeVideos();
+    setDeletingAll(false);
+    if (result.success) {
+      setSelected(null);
+      setConverted(null);
+      await loadVideos();
+      setMsg({ type: "ok", text: "전체 삭제 완료" });
+    } else {
+      setMsg({ type: "err", text: "전체 삭제 실패: " + (result.error ?? "") });
+    }
+  }
+
   async function handleSave() {
     if (!converted) return;
     setSaving(true);
@@ -127,13 +158,22 @@ export default function VideoNewsTab() {
       {/* 상단 툴바 */}
       <div className="flex items-center justify-between mb-4 gap-4">
         <h2 className="text-sm font-black uppercase tracking-widest shrink-0">영상 뉴스</h2>
-        <button
-          onClick={handleCollect}
-          disabled={collecting}
-          className="border-2 border-[#1c1712] bg-[#1c1712] text-[#f0e5c0] px-4 py-2 text-sm font-bold hover:bg-[#3d2b1f] transition-colors disabled:opacity-50 shrink-0"
-        >
-          {collecting ? "수집 중..." : "영상 수집"}
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={handleDeleteAll}
+            disabled={deletingAll || videos.length === 0}
+            className="border-2 border-red-700 bg-red-700 text-white px-4 py-2 text-sm font-bold hover:bg-red-800 transition-colors disabled:opacity-50 shrink-0"
+          >
+            {deletingAll ? "삭제 중..." : "전체 삭제"}
+          </button>
+          <button
+            onClick={handleCollect}
+            disabled={collecting}
+            className="border-2 border-[#1c1712] bg-[#1c1712] text-[#f0e5c0] px-4 py-2 text-sm font-bold hover:bg-[#3d2b1f] transition-colors disabled:opacity-50 shrink-0"
+          >
+            {collecting ? "수집 중..." : "영상 수집"}
+          </button>
+        </div>
       </div>
 
       {msg && (
@@ -222,13 +262,22 @@ export default function VideoNewsTab() {
                     <p className="text-xs font-bold leading-snug line-clamp-2 mb-2">
                       {video.title}
                     </p>
-                    <button
-                      onClick={() => handleConvert(video)}
-                      disabled={converting && selected?.id === video.id}
-                      className="text-[11px] border-2 border-[#1c1712] bg-[#1c1712] text-[#f0e5c0] px-3 py-1 font-bold hover:bg-[#3d2b1f] transition-colors disabled:opacity-50"
-                    >
-                      {converting && selected?.id === video.id ? "변환 중..." : "AI 변환"}
-                    </button>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => handleConvert(video)}
+                        disabled={converting && selected?.id === video.id}
+                        className="text-[11px] border-2 border-[#1c1712] bg-[#1c1712] text-[#f0e5c0] px-3 py-1 font-bold hover:bg-[#3d2b1f] transition-colors disabled:opacity-50"
+                      >
+                        {converting && selected?.id === video.id ? "변환 중..." : "AI 변환"}
+                      </button>
+                      <button
+                        onClick={() => handleDeleteOne(video.id)}
+                        disabled={deletingId === video.id}
+                        className="text-[11px] border-2 border-red-600 text-red-600 px-3 py-1 font-bold hover:bg-red-50 transition-colors disabled:opacity-50"
+                      >
+                        {deletingId === video.id ? "..." : "삭제"}
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>
