@@ -64,7 +64,7 @@ async function fetchChannelVideos(
     (statsData.items ?? []).map((v) => [v.id, Number(v.statistics.viewCount ?? 0)])
   );
 
-  const LIVE_KEYWORDS = ["라이브", "LIVE", "Live", "live", "중계", "생방송", "실시간"];
+  const LIVE_KEYWORDS = ["라이브", "LIVE", "Live", "live", "중계", "생방송", "실시간", "#shorts", "#Shorts"];
 
   // 3. Merge, filter live/realtime, sort by viewCount desc, take top 5
   return searchItems
