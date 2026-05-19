@@ -3,9 +3,9 @@ import { createAdminClient } from "@/lib/supabase/admin";
 
 const CHANNELS = [
   { id: "UCcQTRi69dsVYHN3exePtZ1A", name: "KBS 뉴스" },
-  { id: "UCF3MJt3g9_dkGCFiH5yMSqg", name: "MBC 뉴스" },
-  { id: "UCkinYTS9IHqOEwR1Sze09Hw", name: "SBS 뉴스" },
-  { id: "UCsJ6RuBimsG-RmebucBCTqA", name: "JTBC 뉴스" },
+  { id: "UCF4Wxdo3inmxP-Y59wXDsFw", name: "MBC 뉴스" },
+  { id: "UCkinYTS9IHqOEwR1Sze2JTw", name: "SBS 뉴스" },
+  { id: "UCsU-I-vHLiaMfV_ceaYz5rQ", name: "JTBC 뉴스" },
   { id: "UChlgI3UHCOnwUGzWzbJ3H5w", name: "YTN" },
 ];
 
