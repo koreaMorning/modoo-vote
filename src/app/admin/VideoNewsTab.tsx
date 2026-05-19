@@ -9,6 +9,17 @@ const CATEGORIES: Category[] = ["정치", "경제", "사회", "국제", "문화"
 
 const CHANNEL_FILTERS = ["전체", "KBS", "MBC", "SBS", "JTBC", "YTN"];
 
+function decodeHtml(str: string): string {
+  return str
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/&#x27;/g, "'")
+    .replace(/&nbsp;/g, " ");
+}
+
 interface VideoRow {
   id: string;
   video_id: string;
@@ -78,8 +89,8 @@ export default function VideoNewsTab() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          title: video.title,
-          description: video.description ?? "",
+          title: decodeHtml(video.title),
+          description: decodeHtml(video.description ?? ""),
           link: `https://www.youtube.com/watch?v=${video.video_id}`,
         }),
       });
@@ -189,12 +200,12 @@ export default function VideoNewsTab() {
       )}
 
       {/* 채널 필터 탭 */}
-      <div className="flex gap-0 border-b-2 border-[#1c1712] mb-6 overflow-x-auto">
+      <div className="flex gap-0 border-b-2 border-[#1c1712] mb-6">
         {CHANNEL_FILTERS.map((ch) => (
           <button
             key={ch}
             onClick={() => setChannelFilter(ch)}
-            className={`flex items-center gap-1.5 px-4 py-2 text-sm font-bold border-b-2 -mb-0.5 shrink-0 transition-colors ${
+            className={`flex items-center gap-1.5 px-4 py-2 text-sm font-bold border-b-2 -mb-0.5 transition-colors ${
               channelFilter === ch
                 ? "border-[#1c1712] text-[#1c1712] bg-[#f5f0e8]"
                 : "border-transparent text-[#6b6356] hover:text-[#1c1712]"
@@ -260,7 +271,7 @@ export default function VideoNewsTab() {
                       </span>
                     </div>
                     <p className="text-xs font-bold leading-snug line-clamp-2 mb-2">
-                      {video.title}
+                      {decodeHtml(video.title)}
                     </p>
                     <div className="flex gap-2">
                       <button
